@@ -42,30 +42,6 @@
 export default {
     effect1() {
         const fragmentShader = `
-        #define blue1 vec3(0.74,0.95,1.00)
-        #define blue2 vec3(0.87,0.98,1.00)
-        #define blue3 vec3(0.35,0.76,0.83)
-        varying vec2 vUv;
-        uniform float iTime;
-        float circle(vec2 pos, float r, float r1) {
-            float d1 = step(distance(vec2(0.5, 0.5), pos), r);
-            float d2 = step(distance(vec2(0.5, 0.5), pos), r1);
-            return d1 - d2;
-        }
-        void main() {
-            vec2 pos = mod(vec2(vUv.x * 1.0, vUv.y * 1.0), 1.0);
-            vec3 color = vec3(mod(pos.x * 15.0 - iTime, 1.0), mod(pos.y * 15.0 - iTime, 1.0), 1.0);
-            float a = circle(pos, 0.2, 0.1);
-            if(mod(sin(pos.x) / sin(pos.y) * 5.0 - iTime, 1.0) < 0.1){
-                // 距离方形中心距离大于0.5的片元剪裁舍弃掉
-                discard;
-            }
-            gl_FragColor = vec4(color, 1.0);
-        }`
-        return fragmentShader;
-    },
-    effect1_1() {
-        const fragmentShader = `
 		uniform float iTime;
 		const float PI = 3.14159265359;
 
@@ -361,7 +337,7 @@ export default {
             col.g += 0.2 * v;
             col.b += 0.01 * pow(v, 5.0);
             
-            col.a = 1.0;
+            col.a = v == 0.0 ? 0.0 : 1.0;
             
             return col;
         }
@@ -535,6 +511,7 @@ export default {
 		uniform float iTime;
 		uniform vec2 iResolution; 
 		varying vec2 vUv;
+		uniform vec3 color; 
         
         vec2 rotate(vec2 p, float rad) {
             mat2 m = mat2(cos(rad), sin(rad), -sin(rad), cos(rad));
@@ -664,9 +641,8 @@ export default {
             return pow(dst, 2.5) * vec3(1.0, 0.95, 0.8);
         }
 		void main() { 
-            vec2 uv = (vUv - 0.5) * 2.0;
-			gl_FragColor = vec4(calc(uv), 1.0);;
-			
+            vec2 uv = (vUv - 0.5) * 1.8;
+			gl_FragColor = vec4(calc(uv) * color, calc(uv).x);
 		}
 		`;
         return fragmentShader;
@@ -697,7 +673,7 @@ export default {
         float movingLine(vec2 uv, vec2 center, float radius)
         {
             //angle of the line
-            float theta0 = 90.0 * iTime;
+            float theta0 = 90.0 * iTime * 2.0;
             vec2 d = uv - center;
             float r = sqrt( dot( d, d ) );
             if(r<radius)
@@ -1135,7 +1111,7 @@ export default {
                 float power = pow(2.0, float(i));
                 color += (1.5 / power) * snoise(coord + vec3(0.,-iTime*.05, iTime*.01), power*16.);
             }
-            gl_FragColor = vec4( color, pow(max(color,0.),2.)*0.4, pow(max(color,0.),3.)*0.15 , 1.0);
+            gl_FragColor = vec4( color, pow(max(color,0.),2.)*0.4, pow(max(color,0.),3.)*0.15 , color);
 
             // gl_FragColor = vec4(colour, 1.0);
         }
@@ -3679,8 +3655,8 @@ float fbm(vec2 p)
     effect35() {
         const fragmentShader = `
 		uniform float iTime; 
-		varying vec2 vUv;  
-        
+        varying vec2 vUv;  
+        uniform vec3 color;
         vec3 hsb2rgb(in vec3 c)
         {
             vec3 rgb = clamp(abs(mod(c.x*6.0+vec3(0.0,4.0,2.0),
@@ -3693,17 +3669,17 @@ float fbm(vec2 p)
 
         void main(void) {
             // float time = iTime*1.;
-            vec2 uv = (vUv - 0.5) * 4.0;
+            vec2 uv = (vUv - 0.5) * 2.0;
             float r = length(uv) * 1.8;
-            vec3 color = hsb2rgb(vec3(0.24, 0.7, 0.4));
+            vec3 opacity = hsb2rgb(vec3(0.24, 0.7, 0.4));
             
             float a = pow(r, 2.0);
             float b = sin(r * 0.8 - 1.6);
             float c = sin(r - 0.010);
             float s = sin(a - iTime * 3.0 + b) * r;
             
-            color *= abs(1.0 / (s * 10.8)) - 0.01;
-            gl_FragColor = vec4(color, 1.);
+            opacity *= abs(1.0 / (s * 10.8)) - 0.01;
+            gl_FragColor = vec4(color, opacity.x);
         }
 		`;
         return fragmentShader;
@@ -3820,11 +3796,11 @@ float fbm(vec2 p)
         varying vec2 vUv;
         void main(void) {
 
-            float d = mod(vUv.y * 5.0 - iTime, 1.0);
+            float d = mod( vUv.y * 5.0 - iTime, 1.0);
 
             vec3 c = d > 0.5 ? vec3(color1) : vec3(color);
 
-            gl_FragColor = vec4(c, 1.0);
+            gl_FragColor = vec4(c, pow(d, 0.4));
         }
         `
         return fragmentShader
@@ -3833,16 +3809,303 @@ float fbm(vec2 p)
         let fragmentShader = `
         varying vec3 vPosition;
         uniform float iTime;
-        uniform float random;
         uniform vec3 color;
         varying vec2 vUv;
-        void main(void) {
+        void main() {
             
-            float d = mod(vUv.y * 1.0 - iTime*random, 1.0);
+            float d = mod(vUv.y * 1.0 - iTime, 1.0);
 
-            gl_FragColor = vec4(color, pow(d, 10.0));
+            gl_FragColor = vec4(color, pow(d, 3.0));
         }
         `
         return fragmentShader
-    }
+    },
+    effect40() {
+        let fragmentShader = `
+        uniform float iTime;
+        uniform vec3 color;
+        varying vec2 vUv;
+
+        void main()
+        {
+            // Normalized pixel coordinates (from 0 to 1)
+            vec2 pos = vUv;
+            pos -= 0.5;
+            pos *= 20.;
+            float a = cos(pos.x+iTime*3.0)*5.0;
+            float f = (1.0 - smoothstep(pos.y, pos.y + 0.1, a) - (1.0 - smoothstep( pos.y, pos.y+0.1, a+0.2)));
+            gl_FragColor = vec4(f*color, f);
+        }
+        `
+        return fragmentShader
+    },
+    effect41() {
+        let fragmentShader = `
+        uniform float iTime;
+        uniform vec3 color;
+        varying vec2 vUv;
+
+        void main()
+        {
+            float f = 0.0;
+            float d = length(vUv - vec2(0.5));
+
+            f += smoothstep(0.02, 0.005, d);
+
+            f += 1.0 - (smoothstep(0.49, 0.5, d) + smoothstep(0.49, 0.48, d));
+
+            f += 1.0 - ((smoothstep(0.31, 0.32, d) + smoothstep(0.31, 0.30, d)));
+
+            f += 1.0 - ((smoothstep(0.11, 0.12, d) + smoothstep(0.11, 0.10, d)));
+
+            f = smoothstep(0.0, 0.8, f);
+
+            f += fract(vUv.x - vUv.y - iTime) > 0.01 ? 0.0 : 1.0; 
+
+            gl_FragColor = vec4(f*color, f);  
+        }
+        `
+        return fragmentShader
+    },
+    effect42() {
+        let fragmentShader = `
+        uniform float iTime;
+        uniform vec3 color;
+        varying vec2 vUv;
+
+        void main()
+        {
+            float d = mod(-vUv.y, 1.0);
+
+            gl_FragColor = vec4(color, pow(d, 2.0));  
+        }
+        `
+        return fragmentShader
+    },
+    effect43() {
+        const fragmentShader = `
+        #define SMOOTH(r,R) (1.0-smoothstep(R-1.0,R+1.0, r))
+        #define M_PI 3.1415926535897932384626433832795
+
+        uniform vec3 color;
+        uniform vec3 color1;
+
+        float PI = 3.1415926;
+		uniform float iTime;
+		uniform vec2 iResolution; 
+		varying vec2 vUv;
+        
+        
+        float movingLine(vec2 uv, vec2 center, float radius)
+        {
+            //angle of the line
+            float theta0 = 90.0 * iTime * 2.0;
+            vec2 d = uv - center;
+            float r = sqrt( dot( d, d ) );
+            if(r<radius)
+            {
+                //compute the distance to the line theta=theta0
+                vec2 p = radius*vec2(cos(theta0*M_PI/180.0),
+                                    -sin(theta0*M_PI/180.0));
+                float l = length( d - p*clamp( dot(d,p)/dot(p,p), 0.0, 1.0) );
+                d = normalize(d);
+                //compute gradient based on angle difference to theta0
+                float theta = mod(180.0*atan(d.y,d.x)/M_PI+theta0,360.0);
+                float gradient = clamp(1.0-theta/360.0,0.0,1.0);
+                return SMOOTH(l,.6) + 0.8*gradient;
+            }
+            else return 0.0;
+        }
+
+        float circle(vec2 uv, vec2 center, float radius, float width)
+        {
+            float r = length(uv - center);
+            return SMOOTH(r-width/2.0,radius)-SMOOTH(r+width/2.0,radius);
+        }
+        
+      
+		void main() { 
+            vec2 _uv = vec2(vUv.x * iResolution.x, vUv.y * iResolution.y);
+            vec3 finalColor;
+            vec2 uv = _uv;
+            
+            vec2 c = vec2(iResolution.x / 2.0, iResolution.y / 2.0);
+            finalColor += movingLine(uv, c, 300.0) * color;
+            // finalColor += (circle(uv, c, 200.0, 2.0) ) * color1;
+
+			gl_FragColor = vec4( finalColor, 1.0);
+		}
+		`;
+        return fragmentShader;
+    },
+    effect44() {
+        let fragmentShader = `
+        const float PI = 3.14159265359;
+        const float TWO_PI = 6.28318530718;
+        const int N = 3;				// triangle polygons please
+        const float r0 = 0.01;			// size of centre circle
+        const float r_blue = 0.025;		// size of blue radar blips
+        const float r_red = 0.015;		// size of red radar blips
+        const float edge = 0.95;		// overall size
+        const float offset = 0.05;
+        uniform float iTime;
+        uniform sampler2D map;
+        varying vec2 vUv;
+        float plot(const vec2 st, const float pct, const float width)
+            {
+                return smoothstep(pct - width, pct, st.y) -
+                       smoothstep(pct, pct + width, st.y);
+            }
+        
+        float drawPolygon(const vec2 polygonCenter, const int N, const float radius, vec2 pos)
+            {
+                pos = pos - polygonCenter;
+                float d = 0.0;
+                float a = atan(pos.x, pos.y);
+                float r = TWO_PI / float(N);
+                d = cos(floor(0.5 + a / r)*r - a)*length(pos);
+                return (1.0 - smoothstep(radius, radius + radius/10.0, d));
+            }
+        
+        float gradations(const float a, const float gradNum, const float outRad, const float tickLen, const float tickWidth, const float r, const float move)
+            {
+                float f = step(0.0, cos((a + move)*gradNum) - tickWidth)*tickLen + (outRad - tickLen);
+                return 1.0 - step(f, r) * 1.0 - step(r, outRad - tickLen);
+            }
+        
+        void main(  )
+        {
+            // Normalized pixel coordinates (from 0 to 1)
+            vec2 uv = vUv;
+            vec2 pos = uv.xy - vec2(0.5, 0.5) ; // center what being drawn
+           
+               vec4 grndSpd = vec4(0.0, iTime/5.0, 0.0, 0.0);
+            vec4 mapcol = texture2D(map,uv) * vec4 (0.0, 0.85, 0.0, 1.0);
+          
+            vec3 color = vec3(0.0, 0.0, 0.0);
+        
+            float r = length(pos) * 2.0;
+            float a = atan(pos.y, pos.x); // angle of pixel
+            float an = PI - mod(iTime/ 1.0, TWO_PI); // angle of radar sweep
+            float blipSpd = 3.0; // Blip / Trace speed
+            vec2 translate1 = vec2(cos(iTime/ blipSpd), sin(iTime/ blipSpd));
+            vec2 translate2 = vec2(sin(iTime/ blipSpd), cos(iTime/ blipSpd));
+            vec2 left1 = translate1 * 0.35;
+            vec2 right1 = -translate1 * 0.30;
+            vec2 left2 = translate2 * 0.15;
+            vec2 right2 = -translate2 * 0.25;
+            
+        // Radar Sweep
+               float sn = step(PI/2.0, an) * step(-PI/2.0, (a + an)) * step(r, edge) * (1.0 - 0.55 * (a + (TWO_PI) - an));
+            float sw = step(an, a) * step(r, edge);
+            float s_blade = sw * (1.0 - (a - an) * 20.0);
+            float s = sw * (1.0 - 0.55 * (a - an));
+            s = max(sn,s);
+            float se = step(r, edge - 0.05);
+           
+        // Center point
+            float s1 = smoothstep(edge - 0.00, edge + 0.01, r)* smoothstep(edge + 0.02, edge + 0.01, r);   
+           
+        // Circular concentric rings
+            float s0 = 1.0 - smoothstep(r0 / 2.0, r0, length(pos));
+            float smb = (1.0 - smoothstep(0.2, 0.2 + 0.01, length(pos))) * (1.0 - smoothstep(0.2 +0.01, 0.2, length(pos)));
+            float smr = (1.0 - smoothstep(0.3, 0.3 + 0.01, length(pos))) * (1.0 - smoothstep(0.3 +0.01, 0.3, length(pos)));
+            
+        // Circular concentric gradations
+            float gradNum = 120.0;
+            float tickWidth = 0.9;
+            const float tickLen = 0.04;
+            float outRad = edge;
+            float move = 0.0;
+            float sm = 0.75*gradations(a, gradNum, outRad, tickLen, tickWidth, r, move);   
+           
+            gradNum = 36.0;
+            tickWidth = 0.95;
+            outRad = 0.6;
+            move = sin(iTime/10.0);
+            smr += 0.5*gradations(a, gradNum, outRad, tickLen, tickWidth, r, move);
+        
+            outRad = 0.4;
+            move = cos(iTime/10.0);
+            smb += 0.5*gradations(a, gradNum, outRad, tickLen, tickWidth, r, move);
+        
+        // Radial spoke gradations 
+            float sr = plot(pos, pos.x, 0.003) * step(r, edge - 0.06);
+            sr += plot(vec2(0.0, 0.0), pos.x, 0.002) * step(r, edge - 0.06);
+            sr += plot(vec2(0.0, 0.0), pos.y, 0.003) * step(r, edge - 0.06);
+            sr += plot(-pos, pos.x, 0.003) * step(r, edge - 0.06);
+            sr *= 0.75;
+        
+        // Blue circular radar blip traces
+            vec2 st_trace1 = left2;
+            float s_trace1 = s * (1.0 - smoothstep(r_blue / 10.0, r_blue, length(pos - st_trace1)));
+            s_trace1 += s * (1.0 - smoothstep(r_blue / 10.0, r_blue, length(pos - st_trace1 + vec2(+offset, +offset))));
+            s_trace1 += s * (1.0 - smoothstep(r_blue / 10.0, r_blue, length(pos - st_trace1 + vec2(+2.0 *offset, +2.0 *offset))));
+        
+            vec2 st_trace2 = right1;
+            float s_trace2 = s * (1.0 - smoothstep(r_blue / 10.0, r_blue, length(pos - st_trace2)));
+        
+        // Red Trianglular radar flight blip trace 
+            vec2 st_trace3 = left1;
+            float st1 = s * (drawPolygon(st_trace3, N, r_red , pos));
+            st1 += s * (drawPolygon(st_trace3 + vec2(-offset, -offset), N, r_red, pos));
+            st1 += s * (drawPolygon(st_trace3 + vec2(+offset, -offset), N, r_red, pos));
+        
+            vec2 st_trace4 = right2;
+            float st2 = s * (drawPolygon(st_trace4, N, r_red, pos));  
+            
+        // Lets add all the bits together and send them to screen
+            float s_grn = max(s * mapcol.y, s_blade);
+            s_grn = max(s_grn, (s0 +  sr + sm));
+            s_grn += s1 / 1.5  + smb + smr;
+        
+            float s_red = st1*2.0 + st2*2.0 + smr;
+                
+            float s_blue = max(s_trace1 + s_trace2, s_blade) + smb;
+        
+            if (s_trace1 > 0.0 || s_trace2 > 0.0) { s_blue = max(s, s_blue); s_grn = max(s_grn, s_blue); }
+        
+            color += vec3(s_red , s_grn, s_blue);   
+            
+            vec4 texColor = mapcol * s;
+            
+            // Output to screen   
+            gl_FragColor = vec4(color, color.g);//Set the screen pixel to that color
+        
+        }
+        `
+        return fragmentShader
+    },
+    effect45() {
+        let fragmentShader = `
+        uniform float time;
+        uniform vec3 color;
+        uniform vec3 color1;
+        varying vec3 vPosition;
+        void main() {
+
+            float indexMix = (vPosition.z + 0.003 ) /0.01;
+            
+            vec3 lightColor = mix(color1, color, indexMix);
+
+            gl_FragColor = vec4(lightColor, 1.0);
+        }
+        `
+        return fragmentShader
+    },
+    effect46() {
+        let fragmentShader = `
+        uniform float time;
+        uniform vec3 color;
+        uniform vec3 color1;
+        varying vec2 vUv;
+        uniform sampler2D map;
+        void main() {
+            vec4 texture = texture2D(map,vUv);
+            gl_FragColor = texture;
+        }
+        `
+        return fragmentShader
+    },
+
 }

@@ -4,8 +4,8 @@
           <div class="left">LOGO</div>
           <ul class="right">
             <li class="active">首页</li>
-            <li>示例</li>
-            <li>博客</li>
+            <!-- <li>示例</li>
+            <li>博客</li> -->
           </ul>
         </div>
         <router-view />
@@ -14,7 +14,10 @@
 
 <script>
 export default {
-    
+    data() {
+      return {
+      }
+    }
 }
 </script>
 
@@ -27,6 +30,17 @@ export default {
   overflow: auto;
   padding-top: 50px;
   background: #f2f5f0;
+  &::-webkit-scrollbar {
+    width: 5px;
+    background: rgb(231, 225, 221);
+  }
+  &::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    background: rgb(77, 168, 168);
+  }
+  &::-webkit-scrollbar-track-piece {
+    background-image: linear-gradient(to bottom, red, green);
+  }
   // background-image: linear-gradient(to right, #1346af, #2c7caa, #326890, #2ac4ce);
 }
 .app-nav {

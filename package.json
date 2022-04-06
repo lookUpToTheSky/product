@@ -9,13 +9,19 @@
   },
   "dependencies": {
     "axios": "^0.25.0",
+    "cesium": "^1.91.0",
     "core-js": "^3.6.5",
     "element-ui": "^2.15.6",
+    "maptalks": "^1.0.0-rc.2",
+    "maptalks.three": "^0.23.0",
     "mockjs": "^1.1.0",
+    "qrcode": "^1.5.0",
     "three": "^0.136.0",
+    "tween": "^0.9.0",
     "vue": "^2.6.11",
     "vue-router": "^3.2.0",
-    "vuex": "^3.4.0"
+    "vuex": "^3.4.0",
+    "xlsx": "0.14.1"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "^4.5.0",

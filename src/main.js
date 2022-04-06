@@ -10,11 +10,12 @@ import '@/styles/reset.css'
 Vue.use(ElementUI)
 
 Vue.config.productionTip = false
-if (process.env.NODE_ENV === 'development') {
-  const { runMock } = require('../mock')
-  runMock()
-}
-new Vue({
+// if (process.env.NODE_ENV === 'development') {
+//   const { runMock } = require('../mock')
+//   runMock()
+// }
+
+const app = new Vue({
   router,
   store,
   render: h => h(App)
