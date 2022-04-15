@@ -9,8 +9,8 @@
 </template>
 
 <script>
-import { getArticle } from '@/api/user'
 import * as THREE from 'three'
+import Event from '@/utils/object3DEvent'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls' // 控制器
 import { FlyControls } from 'three/examples/jsm/controls/FlyControls' // 控制器
 import { TrackballControls } from 'three/examples/jsm/controls/TrackballControls' // 控制器
@@ -33,7 +33,6 @@ let mixer, actions;
 export default {
   data() {
     return {
-      list: [],
       image: '',
       views: null,
       effectList: Effect,
@@ -43,18 +42,6 @@ export default {
     }
   },
   methods: {
-    async getArticleList() {
-      const params = {
-        size: 10,
-        current: 1
-      }
-      const { data,code } = await getArticle(params)
-      if(code === 200) {
-        this.list = data.records
-        this.total = data.total
-        this.image = this.list[0].image_uri
-      }
-    },
     getMesh(fragmentShader) {
         // const geometry = new THREE.CylinderGeometry(0.2, 0.2, 100, 16, 16, true);
         // const geometry = new THREE.BoxGeometry(25, 25, 100, 16, 16, 16, true);
@@ -190,7 +177,6 @@ export default {
                 child.castShadow = true
               }
             })
-            scene.add(obj)
         })
     },
     init() {
@@ -199,6 +185,7 @@ export default {
       scene.position.y = -20
       camera = new THREE.PerspectiveCamera(75, this.views.clientWidth/this.views.clientHeight, 0.1, 5000)
       camera.position.set(0, 10, 80);
+      new Event(this.views, scene, camera)
       render = new THREE.WebGLRenderer({antialias: true, alpha: true})
       render.setSize(this.views.clientWidth, this.views.clientHeight)
       render.shadowMapEnabled = true
@@ -301,7 +288,6 @@ export default {
     }
   },
   mounted() {
-    this.getArticleList()
     this.init()
     this.objLoader('./obj/mm/', 'file.obj', 'file.mtl')
     // this.objLoader('./obj/', 'ln.obj', 'ln.mtl')

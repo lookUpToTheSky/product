@@ -570,11 +570,11 @@ export default {
         this.cityRoadLine()
     },
     initScene(gl, scene, camera) {
-        object3DEvent = new EVENT({
-          element: this.views,
+        object3DEvent = new EVENT(
+          this.views,
           scene,
-          camera
-        })
+          camera,
+          false)
         let AmbientLight = new THREE.AmbientLight( 0x404040);
         scene.add( AmbientLight );
         var DirectionalLight = new THREE.DirectionalLight( 0xffffff, 2);
@@ -623,7 +623,7 @@ export default {
                     color: { value: new THREE.Color(0xffffff) },
                     color1: { value: new THREE.Color(0x1b2060) }
                 },
-                side: 1,
+                side: 2,
                 depthWrite: true,
                 transparent: false,
                 depthTest: true,
@@ -714,7 +714,7 @@ export default {
   width: 100%;
   height: 100%;
   position: relative;
-  background: url('/images/sky.jpg') no-repeat;
+  background: url('~@/assets/img/sky.jpg') no-repeat;
 }
 .effect-list {
   position: absolute;

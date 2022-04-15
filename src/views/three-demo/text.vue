@@ -10,7 +10,6 @@
 </template>
 
 <script>
-import { getArticle } from '@/api/user'
 import TWEEN from 'tween'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls' // 控制器
@@ -172,7 +171,7 @@ export default {
     // 文字生成
     createText(number) {
         number = number.toString()
-        new FontLoader().load('../font/helvetiker_regular.typeface.json', (text) => {
+        new FontLoader().load('./font/helvetiker_regular.typeface.json', (text) => {
             var gem = new TextGeometry(number, {
                 size: 40, //字号大小，一般为大写字母的高度
                 height: 5, //文字的厚度

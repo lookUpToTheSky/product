@@ -20,9 +20,10 @@
 
 <script>
 import * as THREE from 'three';
+import Event from '@/utils/object3DEvent'
 import { TWEEN } from 'three/examples/jsm/libs/tween.module.min.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { CSS3DRenderer, CSS3DObject } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
+import { CSS3DRenderer, CSS3DObject, CSS3DSprite } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 const vertexShader = `
 		varying vec3 vPosition;
@@ -188,7 +189,7 @@ export default {
             camera.position.z = 5000;
             camera.position.y = 3000;
             scene = new THREE.Scene();
-            
+            new Event(window, camera)
             var DirectionalLight = new THREE.DirectionalLight( 0xffffff);
             DirectionalLight.position.set( 0, 50, 0 );
             scene.add( DirectionalLight );
@@ -238,7 +239,7 @@ export default {
                 details.innerHTML = table[ i + 1 ] + '<br>' + table[ i + 2 ];
                 element.appendChild( details );
                 document.body.appendChild(element)
-                const objectCSS = new CSS3DObject( element );
+                const objectCSS = new CSS3DSprite( element );
                 objectCSS.position.x = Math.random() * 4000 - 2000;
                 objectCSS.position.y = Math.random() * 4000 - 2000;
                 objectCSS.position.z = Math.random() * 4000 - 2000;
@@ -460,7 +461,7 @@ export default {
             const obj2 = new CSS3DObject(element.cloneNode(true))
 
             obj2.position.set(0, 0, 0)
-
+            
             scene.add(obj2)
 
         },

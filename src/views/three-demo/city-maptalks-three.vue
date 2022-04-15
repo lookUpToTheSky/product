@@ -573,11 +573,11 @@ export default {
         this.cityRoadLine()
     },
     initScene(gl, scene, camera) {
-        object3DEvent = new EVENT({
-          element: this.views,
+        object3DEvent = new EVENT(
+          this.views,
           scene,
-          camera
-        })
+          camera,
+          false)
         let AmbientLight = new THREE.AmbientLight( 0x404040);
         scene.add( AmbientLight );
         var DirectionalLight = new THREE.DirectionalLight( 0xffffff, 2);
@@ -686,7 +686,7 @@ export default {
     this.loadMap()
     map.on('resize', () => {
       render1.setSize(this.views.clientWidth, this.views.clientHeight)
-      if(object3DEvent) object3DEvent.update()
+      if(object3DEvent) object3DEvent.resize()
     })
   },
   destroyed() {

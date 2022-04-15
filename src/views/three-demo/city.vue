@@ -546,6 +546,19 @@ export default {
     runAniamte() {
         controler.autoRotate = !controler.autoRotate
     },
+    setSkyBox(type) {
+      var loader = new THREE.TextureLoader();
+      var skyBox = new THREE.BoxGeometry(8000,8000,8000);
+      var rootPath = './images/';
+      var imgNameArr = ['_posx','_negx','_posy','_negy','_posz','_negz'];
+      var format = '.jpg';
+      var materialArr = [];
+      for(let i=0; i< imgNameArr.length;i++) {
+        materialArr.push(new THREE.MeshBasicMaterial({map:loader.load(rootPath+type+imgNameArr[i]+format),side: THREE.DoubleSide}));
+      }
+      const sky = new THREE.Mesh(skyBox, materialArr);
+      scene.add(sky);
+    },
     moveLight() {
       time = moveLightShader.uniforms[ 'iTime' ].value;
         if(time > 1.2){
@@ -595,6 +608,7 @@ export default {
     this.loadGeoJson()
     this.createLineFly()
     this.createPointGeo()
+    this.setSkyBox('dark')
     // this.initCesium()
     window.onresize = () => {
       render.setSize(this.views.clientWidth, this.views.clientHeight)

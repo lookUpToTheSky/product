@@ -11,15 +11,16 @@
 </template>
 
 <script>
-import { getArticle } from '@/api/user'
 import * as THREE from 'three'
+import Event from 'object3d-events'
+// import Event from '@/utils/object3DEvent.js'
+import { Text3DRenderer, Text3D, Text3DS } from 'three-3d-text'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls' // 控制器
-import { FlyControls } from 'three/examples/jsm/controls/FlyControls' // 控制器
-import { TrackballControls } from 'three/examples/jsm/controls/TrackballControls' // 控制器
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer' // 控制器
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass' // 控制器
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass' // 控制器
-import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader' // 控制器
+import { SMAAEdgesShader, SMAAWeightsShader, SMAABlendShader } from 'three/examples/jsm/shaders/SMAAShader' 
+import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass' 
 import Shader from '@/utils/shader.js'
 const vertexShader = `
     varying vec3 vPosition;
@@ -32,8 +33,8 @@ const vertexShader = `
     }
 `;
   
-var type = 'add', time;
-let scene, camera, render, mirrorCubeCamera, controler, composer,sweepingLightShader,shaderPass, flyControls, trackballControls, clock = new THREE.Clock();;
+var type = 'add', time, objectEvent;
+let scene, camera, render,textRenderer, mirrorCubeCamera, controler, composer,sweepingLightShader,shaderPass, flyControls, trackballControls, clock = new THREE.Clock();;
 export default {
   name: 'shader',
   data() {
@@ -47,18 +48,6 @@ export default {
     }
   },
   methods: {
-    async getArticleList() {
-      const params = {
-        size: 10,
-        current: 1
-      }
-      const { data,code } = await getArticle(params)
-      if(code === 200) {
-        this.list = data.records
-        this.total = data.total
-        this.image = this.list[0].image_uri
-      }
-    },
      // 使用canvas创建纹理
     generateSprite() {
         var canvas = document.createElement('canvas');
@@ -81,62 +70,65 @@ export default {
 
     },
     getMesh(fragmentShader) {
-        let Octahedron = new THREE.OctahedronGeometry(10, 0);
+        let Octahedron = new THREE.OctahedronGeometry(40, 0);
         let OctahedronMesh = new THREE.Mesh(Octahedron, new THREE.MeshPhysicalMaterial({
             color: '#bbaaff',
-            wireframe: true
+            wireframe: false
         }));
-        scene.add(OctahedronMesh)
-        OctahedronMesh.position.set(0, 15, 0)
-
-        let geometry1 = new THREE.BoxGeometry(10, 10, 20, 16, 16);
+        // scene.add(OctahedronMesh)
+        OctahedronMesh.position.set(0, 15, 120)
+        
+        
+        let geometry1 = new THREE.BoxGeometry(80, 80, 120, 16, 16);
         let box = new THREE.Mesh(geometry1, new THREE.MeshPhysicalMaterial({color: '#41ddaa'}));
-        scene.add(box)
+        // scene.add(box)
         box.position.set(-30, 5, 0)
+        
+        const group = new THREE.Group()
+        group.add(OctahedronMesh, box)
 
-        const geometry = new THREE.CircleGeometry(150, 164);
-        let plane = new THREE.Mesh(geometry, new THREE.MeshPhysicalMaterial({color: '#ffffff'}));
+        box.on('hover', (obj, t) => {
+          t.material.color.set('red')
+        }, (obj, t) => {
+          t.material.color.set('green')
+        })
+        scene.add(group)
+
+        const geometry = new THREE.CircleGeometry(250, 164);
+        let plane = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({color: '#00ccdd'}));
         plane.rotation.x = -Math.PI/2;
         scene.add(plane)
 
-        let geometry2 = new THREE.SphereGeometry(10, 32, 32);
+        let geometry2 = new THREE.SphereGeometry(30, 32, 32);
         const cubeRenderTarget = new THREE.WebGLCubeRenderTarget( 128, { 
           format: THREE.RGBFormat, 
           generateMipmaps: true, 
           minFilter: THREE.LinearMipmapLinearFilter
         } );
-        let mirrorCubeCamera = new THREE.CubeCamera( 10, 6000, cubeRenderTarget );
+        let mirrorCubeCamera = new THREE.CubeCamera( 30, 12000, cubeRenderTarget );
         let sphere = new THREE.Mesh(geometry2, new THREE.MeshBasicMaterial({ envMap: cubeRenderTarget.texture}));
         scene.add(sphere, mirrorCubeCamera)
-        sphere.position.set(30, 10, 0)
+        sphere.position.set(80, 30, 0)
         mirrorCubeCamera.position.copy(sphere.position)
         mirrorCubeCamera.update( render, scene );
-
     },
     init() {
       this.views = this.$refs.views
       scene = new THREE.Scene()
-      let fog = new THREE.Fog(0xff00ff, 1, 1000)
-      scene.fog = fog
+      // scene.background = new THREE.Color(0x000000)
+      // let fog = new THREE.Fog(0xff00ff, 1, 1000)
+      // scene.fog = fog
 
-      camera = new THREE.PerspectiveCamera(45, this.views.clientWidth/this.views.clientHeight, 0.1, 10000)
-      camera.position.set(0, 100, 105);
+      camera = new THREE.PerspectiveCamera(75, this.views.clientWidth/this.views.clientHeight, 1, 10000)
+      camera.position.set(0, 300, 400);
+
+      objectEvent = new Event(this.views, scene, camera) //事件初始化
+
       render = new THREE.WebGLRenderer({antialias: true, alpha: true})
       render.setSize(this.views.clientWidth, this.views.clientHeight)
       this.views.appendChild(render.domElement)
-      controler = new OrbitControls(camera, render.domElement);
-      // trackballControls = new TrackballControls(camera, render.domElement);
-      // trackballControls.rotateSpeed = 5
-      // flyControls = new FlyControls(camera, render.domElement);
-      // flyControls.movementSpeed = 50; //设置移动的速度
-      // flyControls.rollSpeed = Math.PI / 50; //设置旋转速度
-      // flyControls.autoForward = true;
-      // flyControls.dragToLook = false;
-      // controler.minPolarAngle = 0; 
-      // controler.maxPolarAngle = Math.PI/2;
-      // controler.autoRotate = true
-      // controler.autoRotateSpeed = 3
-      controler.minDistance = 1;
+      controler = new OrbitControls(camera, render.domElement)
+      controler.minDistance = 350;
       controler.maxDistance = 800;
       controler.enableDamping = true
       let AmbientLight = new THREE.AmbientLight( 0x888888 );
@@ -146,6 +138,41 @@ export default {
       scene.add( DirectionalLight );
       this.getMesh()
       this.initComposer()
+      textRenderer = new Text3DRenderer()
+      this.views.appendChild(textRenderer.domElement)
+      textRenderer.setSize(this.views.clientWidth, this.views.clientHeight)
+      textRenderer.domElement.style.background = '#000'
+
+      const element = document.createElement('div')
+      element.className = 'text3D'
+      
+      const text = document.createElement('div')
+      text.className = 'text'
+      text.innerText = '中华人民共和国万岁'
+      element.appendChild(text)
+      
+      const text2 = document.createElement('div')
+      text2.className = 'text2'
+      text2.innerText = '中国人民万岁'
+      element.appendChild(text2)
+
+      let ele1 = element.cloneNode(true)
+      let obj1 = new Text3D(ele1, 120, 40)
+      obj1.position.x = 80
+      scene.add(obj1)
+      let ele2 = element.cloneNode(true)
+      let obj2 = new Text3DS(ele2, 120, 40)
+      
+      obj2.position.x -= 80
+      scene.add(obj2)
+
+      obj1.on('click', () => {
+        ele1.style.color = element.style.color = `rgb(${Math.floor(Math.random()*255)},${Math.floor(Math.random()*255)},${Math.floor(Math.random()*225)})`
+      })
+
+      obj2.on('click', () => {
+        ele2.style.color = element.style.color = `rgb(${Math.floor(Math.random()*255)},${Math.floor(Math.random()*255)},${Math.floor(Math.random()*225)})`
+      })
     },
     initComposer() {
         sweepingLightShader = new THREE.ShaderMaterial({
@@ -181,11 +208,21 @@ export default {
       shaderPass = new ShaderPass(sweepingLightShader)
       composer.addPass(shaderPass);
 
-      let fxaaShader = new ShaderPass(FXAAShader)
-      const pixelRatio = render.getPixelRatio()
-      fxaaShader.material.uniforms['resolution'].value.x = 1/(this.views.clientWidth * pixelRatio)
-      fxaaShader.material.uniforms['resolution'].value.y = 1/(this.views.clientHeight * pixelRatio)
+      let fxaaShader = new SMAAPass(SMAAEdgesShader)
       composer.addPass(fxaaShader);
+    },
+    setSkyBox(type) {
+      var loader = new THREE.TextureLoader();
+      var skyBox = new THREE.BoxGeometry(5000,5000,5000);
+      var rootPath = './images/';
+      var imgNameArr = ['_posx','_negx','_posy','_negy','_posz','_negz'];
+      var format = '.jpg';
+      var materialArr = [];
+      for(let i=0; i< imgNameArr.length;i++) {
+        materialArr.push(new THREE.MeshBasicMaterial({map:loader.load(rootPath+type+imgNameArr[i]+format),side: THREE.DoubleSide}));
+      }
+      const sky = new THREE.Mesh(skyBox, materialArr);
+      scene.add(sky);
     },
     setNewShader(shader, k) {
       this.activeIndex = k
@@ -238,7 +275,8 @@ export default {
         let delta = clock.getDelta()
         controler.update(delta)
         const elapsedTime = clock.getElapsedTime()
-        composer.render()
+        composer.render(scene, camera)
+        textRenderer.render( scene, camera )
 	      if(mirrorCubeCamera) mirrorCubeCamera.updateCubeMap( render, scene );
         time = sweepingLightShader.uniforms[ 'iTime' ].value;
         if(time > 1.0){
@@ -255,18 +293,22 @@ export default {
     }
   },
   mounted() {
-    this.getArticleList()
     this.init()
     this.animation()
+    this.setSkyBox('sea')
     window.onresize = () => {
       render.setSize(this.views.clientWidth, this.views.clientHeight)
       camera.aspect = this.views.clientWidth / this.views.clientHeight//相机重置可视范围
       camera.updateProjectionMatrix();
+      objectEvent.resize()
+      textRenderer.setSize(this.views.clientWidth, this.views.clientHeight)
+      
     }
   },
   destroyed() {
     scene.clear()
     render.dispose()
+    objectEvent.removeAll()
   }
 }
 </script>
@@ -279,7 +321,6 @@ export default {
 .home-view {
   width: 100%;
   height: 100%;
-  background: rgb(0, 0, 0.5);
 }
 .effect-list {
   position: absolute;
@@ -302,3 +343,13 @@ li > button {
   transform: translateX(50%);
 }
 </style>
+<style lang="scss">
+.text3D {
+  line-height: 20px;
+  font-size: 12px;
+  background: linear-gradient(to bottom, #728c9e, #0783e9);
+  border: 1px solid #0151c9;
+  color: #fff;
+}  
+</style>
+
