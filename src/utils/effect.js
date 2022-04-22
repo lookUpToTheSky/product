@@ -4378,10 +4378,5 @@ float fbm(vec2 p)
             gl_FragColor = vec4(c, 1.0);
         }`
         return fragmentShader
-    },
-    effect50() {
-        let fragmentShader = `
-        `
-        return fragmentShader
-    },
+    }
 }

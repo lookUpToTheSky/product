@@ -11,7 +11,9 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls' // 控制器
 import { dataBJ } from '@/utils/bj.js'
+import Event from '@/utils/object3DEvent.js'
 import { CSS3DRenderer, CSS3DObject } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer' // 控制器
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass' // 控制器
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass' // 控制器
@@ -29,9 +31,10 @@ const vertexShader = `
       vPosition = position;
 		}
 		`;
-let scene, camera, render, render1, controler, clock = new THREE.Clock();
-let composer;
+let scene, camera, render, render1,render2, controler, clock = new THREE.Clock();
+let composer, eventObj;
 let map = new THREE.Group(), earthGlow;
+let noteElement = null, noteObj = null
 export default {
   name: 'effect',
   data() {
@@ -197,9 +200,25 @@ export default {
     },
     // 地球
     earthGeometry() {
+        const geometry = new THREE.SphereGeometry(30.1, 64, 64);
+        const material = new THREE.MeshPhongMaterial({ 
+          color: 0xffffff,
+          transparent: true,
+          depthWrite: false,
+          alphaMap: new THREE.ImageUtils.loadTexture( 'images/clouds.jpg' )
+        })
+        let earth = new THREE.Mesh(geometry, material);
+        map.add(earth)
+
+        let tween = new TWEEN.Tween(earth.rotation).to({x:0,y: Math.PI*2, z: 0}, 5*60000)
+        tween.start()
+        tween.onComplete(() => {
+          earth.rotation.y = 0
+          tween.start()
+        })
+
         const geometry2 = new THREE.SphereGeometry(30, 64, 64);
         const material2 = new THREE.MeshPhongMaterial({ 
-          // color: 0xffffff,
           map: new THREE.ImageUtils.loadTexture( 'images/earth-day.jpg' )
         })
         let earth2 = new THREE.Mesh(geometry2, material2);
@@ -318,8 +337,8 @@ export default {
         css3Text.rotateY(item.rotate)
         map.add(css3Text)
 
-        this.createPlane(css3Text.position)
-        this.createCylinder(this.lgltToxyz(item.lon, item.lat, 33))
+        // this.createPlane(css3Text.position)
+        this.createCylinder(this.lgltToxyz(item.lon, item.lat, 33), item)
         if(index !== 0) {
           const { curve, mesh } = this.addLines(this.startPoint, css3Text.position.clone())
           // map.add(mesh)
@@ -333,15 +352,34 @@ export default {
       render1.domElement.style.top = 0
       render1.setSize(this.views.clientWidth, this.views.clientHeight)
       this.views.appendChild(render1.domElement)
-      controler = new OrbitControls(camera, render1.domElement);
+
+      render2 = new CSS2DRenderer({ alpha: true })
+      render2.domElement.style.position = 'absolute'
+      render2.domElement.style.zIndex = 10
+      render2.domElement.style.top = 0
+      render2.setSize(this.views.clientWidth, this.views.clientHeight)
+      this.views.appendChild(render2.domElement)
+      controler = new OrbitControls(camera, render2.domElement);
       controler.minDistance = 40;
       controler.maxDistance = 300;
       controler.enableDamping = true
       controler.autoRotate = true
       controler.autoRotateSpeed = -0.2
+
+      noteElement = document.createElement('div')
+      noteElement.className = 'note'
+      noteElement.innerText = '中国'
+    },
+    showTextNote(g, item) {
+      if(noteObj!== null)
+        map.remove(noteObj)
+      noteElement.innerText = item.name
+      noteObj = new CSS2DObject(noteElement)
+      noteObj.position.set(g.position.x, g.position.y, g.position.z)
+      map.add(noteObj)
     },
     // 扩散
-    createPlane({x,y,z}) {
+    createPlane() {
         const geometry = new THREE.CircleGeometry(1, 32)
         const material = new THREE.ShaderMaterial({
           uniforms: {
@@ -355,36 +393,67 @@ export default {
           fragmentShader: Effect.effect35()
         })
         const mesh = new THREE.Mesh(geometry, material)
-        mesh.position.set(x,y,z)
-        mesh.lookAt(0,0,0)
-        map.add(mesh)
+        mesh.position.y = 2.9
+        mesh.rotateX(Math.PI/2)
+        return mesh
     },
     // 光柱
-    createCylinder( pos ) {  
-        const geometry = new THREE.CylinderGeometry(0.1, 0.4, 6, 32,32, true)
-        const material = new THREE.ShaderMaterial({
-          uniforms: {
-            iTime: { value: 0 },
-            color: { value: new THREE.Color(0x00ffff)}
-          },
-          side: THREE.FrontSide,
+    createCylinder( pos, item) {  
+        let group = new THREE.Group()
+        const geometry = new THREE.PlaneGeometry(1, 6, 32, 32)
+        const material = new THREE.MeshBasicMaterial({
+          color: 0x00ffff,
+          side: THREE.DoubleSide,
           transparent: true,
-          depthTest: true,
-          depthWrite: false, //禁止写入深度缓冲区数据,
-          vertexShader,
-          fragmentShader: Effect.effect42()
+          depthWrite: false,
+          alphaMap: new THREE.ImageUtils.loadTexture('images/lightray.jpg'),
         })
         var mesh = new THREE.Mesh( geometry, material );
+        var mesh1 = mesh.clone()
+        mesh1.rotateY(Math.PI/2)
+        let mesh2 = this.createPlane()
+        group.add(mesh, mesh1, mesh2)
         //设置mesh位置
-        mesh.position.set( pos.x, pos.y, pos.z );
+        group.position.set( pos.x, pos.y, pos.z );
         // mesh在球面上的法线方向(球心和球面坐标构成的方向向量)
         var coordVec3 = new THREE.Vector3( pos.x, pos.y, pos.z ).normalize();
-        // mesh默认在XOY平面上，法线方向沿着y轴new THREE.Vector3(0, 1, 0)
-        var meshNormal = new THREE.Vector3( 0, 1, 0 );
+        // mesh默认在XOY平面上，法线方向沿着y轴new THREE.Vector3(0, -1, 0)
+        var meshNormal = new THREE.Vector3( 0, -1, 0 );
         // 四元数属性.quaternion表示mesh的角度状态
         //.setFromUnitVectors();计算两个向量之间构成的四元数值
-        mesh.quaternion.setFromUnitVectors( meshNormal, coordVec3 );
-        map.add(mesh)
+        group.quaternion.setFromUnitVectors( meshNormal, coordVec3 );
+        map.add(group)
+
+        group.on('hover', () => {
+          group.children.forEach(child => {
+            if(child.material.uniforms) {
+              child.material.uniforms.color.value = new THREE.Color(0xff00ff)
+            }else{
+              child.material.color.set(0xff00ff)
+            }
+          })
+        }, () => {
+          group.children.forEach(child => {
+            if(child.material.uniforms) {
+              child.material.uniforms.color.value = new THREE.Color(0x00ffff)
+            }else{
+              child.material.color.set(0x00ffff)
+            }
+          })
+        })
+
+        group.on('click', (g, m) => {
+            let target = new THREE.Vector3()
+            g.getWorldPosition(target)
+            let t = new TWEEN.Tween(camera.position).to({
+              x: target.x,
+              y: target.y,
+              z: target.z,
+            }, 2000)
+            t.start()
+            camera.lookAt(new THREE.Vector3().copy(target))
+            this.showTextNote(g, item)
+        })
     },
     // 曲线
     addLines( v0, v3 ) {
@@ -477,7 +546,7 @@ export default {
         varying float vOpacity;
         void main() {
            // 需要当前显示的索引  
-            float showNumber = uTotal * mod(iTime/2.0, 1.0);
+            float showNumber = uTotal * mod(iTime/5.0, 1.0);
             float s = size;
             // && showNumber < current + uRange
             if (showNumber > current) {
@@ -528,6 +597,8 @@ export default {
       render.setSize(this.views.clientWidth, this.views.clientHeight)
       render.sortObjects = true
 
+      eventObj = new Event(this.views, scene, camera, false)
+
       this.views.appendChild(render.domElement)
       let AmbientLight = new THREE.AmbientLight( 0x404040, 2);
       scene.add( AmbientLight );
@@ -561,6 +632,7 @@ export default {
         // composer.render(scene, camera)
         render.render(scene, camera)
         render1.render(scene, camera)
+        render2.render(scene, camera)
         const elapsedTime = clock.getElapsedTime()
         // Update passes
         scene.traverse((child) => {
@@ -573,7 +645,7 @@ export default {
             }
         })
         this.animateId = requestAnimationFrame(this.animation);
-        map.rotation.y += 0.002
+        map.rotation.y += 0.0005
         if(!!earthGlow) {
             earthGlow.material.uniforms.viewVector.value = 
             new THREE.Vector3().subVectors( camera.position, earthGlow.position );
@@ -599,12 +671,15 @@ export default {
     window.onresize = () => {
       render.setSize(this.views.clientWidth, this.views.clientHeight)
       render1.setSize(this.views.clientWidth, this.views.clientHeight)
+      render2.setSize(this.views.clientWidth, this.views.clientHeight)
       camera.aspect = this.views.clientWidth / this.views.clientHeight//相机重置可视范围
       camera.updateProjectionMatrix();
+      eventObj.resize()
     }
   },
   beforeDestroy() {
     cancelAnimationFrame(this.animateId)
+    eventObj.clear()
     scene.clear()
     render.dispose()
     composer = null 
@@ -653,4 +728,14 @@ export default {
     color: #fff;
   }
 } 
+.note {
+  width: 120px;
+  height: 60px;
+  color: rgb(8, 192, 248);
+  padding: 5px 10px;
+  background: 100% 100% url('/images/1.png') no-repeat;
+  background-position: 5px 24px;
+  margin-left: 50px;
+  margin-top: -30px;
+}
 </style>

@@ -72,14 +72,12 @@ export default {
     },
     getMesh(fragmentShader) {
         let Octahedron = new THREE.OctahedronGeometry(40, 0);
-        let OctahedronMesh = new THREE.Mesh(Octahedron, new THREE.MeshPhysicalMaterial({
+        let OctahedronMesh = new THREE.Mesh(Octahedron, new THREE.MeshPhongMaterial({
             color: '#bbaaff',
-            wireframe: false
+            flatShading: true
         }));
         // scene.add(OctahedronMesh)
         OctahedronMesh.position.set(0, 15, 120)
-        
-        
         let geometry1 = new THREE.BoxGeometry(80, 80, 120, 16, 16);
         let box = new THREE.Mesh(geometry1, new THREE.MeshPhysicalMaterial({color: '#41ddaa'}));
         // scene.add(box)
@@ -101,12 +99,12 @@ export default {
         scene.add(plane)
 
         let geometry2 = new THREE.SphereGeometry(30, 32, 32);
-        const cubeRenderTarget = new THREE.WebGLCubeRenderTarget( 128, { 
+        const cubeRenderTarget = new THREE.WebGLCubeRenderTarget( 64, { 
           format: THREE.RGBFormat, 
           generateMipmaps: true, 
           minFilter: THREE.LinearMipmapLinearFilter
         } );
-        let mirrorCubeCamera = new THREE.CubeCamera( 30, 12000, cubeRenderTarget );
+        let mirrorCubeCamera = new THREE.CubeCamera( 30, 820, cubeRenderTarget );
         let sphere = new THREE.Mesh(geometry2, new THREE.MeshBasicMaterial({ envMap: cubeRenderTarget.texture}));
         scene.add(sphere, mirrorCubeCamera)
         sphere.position.set(80, 30, 0)
@@ -117,8 +115,8 @@ export default {
       this.views = this.$refs.views
       scene = new THREE.Scene()
       // scene.background = new THREE.Color(0x000000)
-      let fog = new THREE.Fog(0xffffff, 1, 1000)
-      scene.fog = fog
+      // let fog = new THREE.Fog(0xffffff, 1, 1000)
+      // scene.fog = fog
 
       camera = new THREE.PerspectiveCamera(75, this.views.clientWidth/this.views.clientHeight, 1, 10000)
       camera.position.set(0, 300, 400);
@@ -129,13 +127,13 @@ export default {
       render.setSize(this.views.clientWidth, this.views.clientHeight)
       this.views.appendChild(render.domElement)
       controler = new OrbitControls(camera, render.domElement)
-      controler.minDistance = 350;
-      controler.maxDistance = 800;
+      controler.minDistance = 150;
+      controler.maxDistance = 1000;
       controler.enableDamping = true
       let AmbientLight = new THREE.AmbientLight( 0x888888 );
       scene.add( AmbientLight );
       var DirectionalLight = new THREE.DirectionalLight( 0xeeeeee);
-      DirectionalLight.position.set( 0, 50, 0 );
+      DirectionalLight.position.set( 0, 150, 0 );
       scene.add( DirectionalLight );
       this.getMesh()
       this.initComposer()
@@ -176,38 +174,38 @@ export default {
       })
     },
     initComposer() {
-        sweepingLightShader = new THREE.ShaderMaterial({
-            uniforms: {
-                iTime: {
-                    value: 0
-                },
-                tDiffuse: {type: "t", value: null},
-                size: { value: 2 },
-                random: {
-                    value: Math.random(),
-                },
-                color: { value: new THREE.Color(0xff00ff) },
-                iResolution: {
-                    value: new THREE.Vector2(800, 800)
-                },
-                iChannel0: {
-                    value: window.iChannel0
-                },
-                iChannel1: {
-                    value: window.iChannel1
-                }
-            },
-            side: 2,
-            depthWrite: false,
-            transparent: true,
-            vertexShader: vertexShader,
-            fragmentShader: Shader[this.activeIndex]()
-        })
+      sweepingLightShader = new THREE.ShaderMaterial({
+          uniforms: {
+              iTime: {
+                  value: 0
+              },
+              tDiffuse: {type: "t", value: null},
+              size: { value: 2 },
+              random: {
+                  value: Math.random(),
+              },
+              color: { value: new THREE.Color(0xff00ff) },
+              iResolution: {
+                  value: new THREE.Vector2(800, 800)
+              },
+              iChannel0: {
+                  value: window.iChannel0
+              },
+              iChannel1: {
+                  value: window.iChannel1
+              }
+          },
+          side: 2,
+          depthWrite: false,
+          transparent: true,
+          vertexShader: vertexShader,
+          fragmentShader: Shader[this.activeIndex]()
+      })
       composer = new EffectComposer(render)
       composer.addPass(new RenderPass(scene, camera))
 
-      shaderPass = new ShaderPass(sweepingLightShader)
-      composer.addPass(shaderPass);
+      // shaderPass = new ShaderPass(sweepingLightShader)
+      // composer.addPass(shaderPass);
 
       let fxaaShader = new SMAAPass(SMAAEdgesShader)
       composer.addPass(fxaaShader);
