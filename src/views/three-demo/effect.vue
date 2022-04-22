@@ -13,8 +13,6 @@
 <script>
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls' // 控制器
-import { FlyControls } from 'three/examples/jsm/controls/FlyControls' // 控制器
-import { TrackballControls } from 'three/examples/jsm/controls/TrackballControls' // 控制器
 import Effect from '@/utils/effect.js'
 const vertexShader = `
 		varying vec3 vPosition;
@@ -64,7 +62,7 @@ export default {
         // const geometry = new THREE.CylinderGeometry(0.2, 0.2, 100, 16, 16, true);
         // const geometry = new THREE.BoxGeometry(25, 25, 100, 16, 16, 16, true);
         // const geometry = new THREE.CircleGeometry(50, 64);
-        for(let i = 0; i < 1; i++) {
+        // for(let i = 0; i < 1; i++) {
           const material = new THREE.ShaderMaterial({
               uniforms: {
                   iTime: {
@@ -80,10 +78,10 @@ export default {
                       value: new THREE.Vector2(800, 800)
                   },
                   iChannel0: {
-                      value: window.iChannel0
+                      value: new THREE.ImageUtils.loadTexture('./images/smokeparticle.png')
                   },
                   iChannel1: {
-                      value: window.iChannel1
+                      value: new THREE.ImageUtils.loadTexture('./images/smokeparticle.png')
                   },
                   map: {
                     value: new THREE.ImageUtils.loadTexture('./images/smokeparticle.png')
@@ -97,18 +95,35 @@ export default {
           })
           // let geometry = new THREE.CylinderGeometry(10, 10, 100, 16, 16, true);
           const geometry = new THREE.CircleGeometry(50, 64);
-          let Octahedron = new THREE.OctahedronGeometry(10, 0);
+          let Octahedron = new THREE.SphereGeometry(30, 32);
           let OctahedronMesh = new THREE.Mesh(Octahedron, material);
           OctahedronMesh.position.y = 10;
           let plane = new THREE.Mesh(geometry, material);
 
           // plane.position.set(Math.random()*2000*unitX, 50, Math.random()*2000*unitY)
           plane.rotation.x = -Math.PI/2;
-          scene.add(plane, OctahedronMesh)
-        }
+          scene.add(plane)
+        // }
         // let plane = new THREE.Mesh(geometry, material);
         // plane.rotation.x = -Math.PI / 2;
         // return plane;
+    },
+    setSkyBox(type) {
+      var loader = new THREE.TextureLoader();
+      var skyBox = new THREE.BoxGeometry(5000,5000,5000);
+      var rootPath = './images/';
+      var imgNameArr = ['_posx','_negx','_posy','_negy','_posz','_negz'];
+      var format = '.jpg';
+      var materialArr = [];
+      for(let i=0; i< imgNameArr.length;i++) {
+        materialArr.push(new THREE.MeshBasicMaterial({
+          map:loader.load(rootPath+type+imgNameArr[i]+format),
+          side: THREE.DoubleSide,
+          fog: false
+        }));
+      }
+      const sky = new THREE.Mesh(skyBox, materialArr);
+      scene.add(sky);
     },
     init() {
       this.views = this.$refs.views
@@ -122,23 +137,12 @@ export default {
       render.setSize(this.views.clientWidth, this.views.clientHeight)
       this.views.appendChild(render.domElement)
       controler = new OrbitControls(camera, render.domElement);
-      // trackballControls = new TrackballControls(camera, render.domElement);
-      // trackballControls.rotateSpeed = 5
-      // flyControls = new FlyControls(camera, render.domElement);
-      // flyControls.movementSpeed = 50; //设置移动的速度
-      // flyControls.rollSpeed = Math.PI / 50; //设置旋转速度
-      // flyControls.autoForward = true;
-      // flyControls.dragToLook = false;
-      // controler.minPolarAngle = 0; 
-      // controler.maxPolarAngle = Math.PI/2;
-      // controler.autoRotate = true
-      // controler.autoRotateSpeed = 3
       controler.minDistance = 1;
       controler.maxDistance = 800;
       controler.enableDamping = true
       let AmbientLight = new THREE.AmbientLight( 0x888888 );
       scene.add( AmbientLight );
-      var DirectionalLight = new THREE.DirectionalLight( 0xeeeeee);
+      var DirectionalLight = new THREE.DirectionalLight( 0xffffff);
       DirectionalLight.position.set( 0, 50, 0 );
       scene.add( DirectionalLight );
 
@@ -149,8 +153,9 @@ export default {
       // scene.add(gridHelper)
     },
     setNewEffect(effect, k) {
-      this.activeIndex = k
-      scene.clear()
+     this.activeIndex = k
+     scene.clear()
+    this.setSkyBox('star')
      this.getMesh(effect())
     },
     // 创建粒子系统
@@ -175,7 +180,9 @@ export default {
         // Update passes
         scene.traverse((child) => {
             if (child.material){
-                child.material.uniforms.iTime.value = elapsedTime
+              if(child.material.uniforms) {
+                  child.material.uniforms.iTime.value = elapsedTime
+              }
             }
         })
         requestAnimationFrame(this.animation);
@@ -184,6 +191,7 @@ export default {
   mounted() {
     this.init()
     this.animation()
+    this.setSkyBox('star')
     window.onresize = () => {
       render.setSize(this.views.clientWidth, this.views.clientHeight)
       camera.aspect = this.views.clientWidth / this.views.clientHeight//相机重置可视范围

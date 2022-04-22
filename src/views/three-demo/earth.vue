@@ -5,7 +5,7 @@
         <el-button @click="$router.go(-1)" type="primary">退 出</el-button>
     </div>
   </div>
-</template>three
+</template>
 
 <script>
 import * as THREE from 'three'
@@ -31,7 +31,7 @@ const vertexShader = `
 		`;
 let scene, camera, render, render1, controler, clock = new THREE.Clock();
 let composer;
-let map = new THREE.Group()
+let map = new THREE.Group(), earthGlow;
 export default {
   name: 'effect',
   data() {
@@ -131,7 +131,6 @@ export default {
                   map.add(mesh)
                 }
             })
-            map.position.y = 20
           }
       })
     },
@@ -174,54 +173,78 @@ export default {
             size: 2,
             map: new THREE.ImageUtils.loadTexture('images/spikey.png'),
             transparent: true,
-            // depthTest: true,
-            blending: THREE.AdditiveBlending,
+            depthTest: true,
+            depthWrite: false, //禁止写入深度缓冲区数据,
         })
         const sky = new THREE.Points(geometry, m)
         scene.add(sky)
     },
+    setSkyBox(type) {
+      var loader = new THREE.TextureLoader();
+      var skyBox = new THREE.BoxGeometry(5000,5000,5000);
+      var rootPath = './images/';
+      var imgNameArr = ['_posx','_negx','_posy','_negy','_posz','_negz'];
+      var format = '.jpg';
+      var materialArr = [];
+      for(let i=0; i< imgNameArr.length;i++) {
+        materialArr.push(new THREE.MeshBasicMaterial({
+          map:loader.load(rootPath+type+imgNameArr[i]+format),
+          side: THREE.BackSide
+        }));
+      }
+      const sky = new THREE.Mesh(skyBox, materialArr);
+      scene.add(sky);
+    },
     // 地球
     earthGeometry() {
-        const geometry1 = new THREE.SphereGeometry(30, 64, 64);
-        const material1 = new THREE.MeshPhongMaterial({ 
-          color: 0x0000ff,
-          blending: THREE.AdditiveBlending,
-          map: new THREE.ImageUtils.loadTexture( 'images/earth-index-shifted-gray.png' )
-        })
-        let earth1 = new THREE.Mesh(geometry1, material1);
-        map.add(earth1)
-
         const geometry2 = new THREE.SphereGeometry(30, 64, 64);
         const material2 = new THREE.MeshPhongMaterial({ 
-          color: 0xffffff,
-          blending: THREE.AdditiveBlending,
-          map: new THREE.ImageUtils.loadTexture( 'images/earth-outline-shifted-gray.png' )
+          // color: 0xffffff,
+          map: new THREE.ImageUtils.loadTexture( 'images/earth-day.jpg' )
         })
         let earth2 = new THREE.Mesh(geometry2, material2);
         map.add(earth2)
 
-        const geometry3 = new THREE.SphereGeometry(30.1, 180, 180);
-        const material3 = new THREE.MeshPhongMaterial({ 
-          color: 0x0b1060,
-          blending: THREE.AdditiveBlending
-        })
-        let earth3 = new THREE.Mesh(geometry3, material3);
-        map.add(earth3)
-        var spriteMaterial = new THREE.SpriteMaterial( 
-        { 
-          map: new THREE.ImageUtils.loadTexture( 'images/glow.png' ), 
-          color: 0x0000ee, 
-          transparent: false,
-          depthTest: true,
-          // blending: THREE.AdditiveBlending
-        });
-        var sprite = new THREE.Sprite( spriteMaterial );
-        sprite.scale.set(150, 150, 1.0);
-        map.add(sprite);
-        sprite.renderOrder = 10
-        
         map.position.y = 20
         map.rotation.set(0.3,Math.PI/1.15,0.1)
+
+        var customMaterial = new THREE.ShaderMaterial( 
+        {
+            uniforms: 
+          { 
+            "c":   { type: "f", value: 0.3 },
+            "p":   { type: "f", value: 2.4 },
+            glowColor: { type: "c", value: new THREE.Color(0x0000ee) },
+            viewVector: { type: "v3", value: camera.position }
+          },
+          side: THREE.BackSide,
+          blending: THREE.AdditiveBlending,
+          transparent: true,
+          depthWrite: false, //禁止写入深度缓冲区数据,
+          vertexShader: `uniform vec3 viewVector;
+          uniform float c;
+          uniform float p;
+          varying float intensity;
+          void main() 
+          {
+            vec3 vNormal = normalize( normalMatrix * normal );
+            vec3 vNormel = normalize( normalMatrix * viewVector );
+            intensity = pow( c - dot(vNormal, vNormel), p );
+            gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+          }`,
+          fragmentShader: `uniform vec3 glowColor;
+          varying float intensity;
+          void main() 
+          {
+            vec3 glow = glowColor * intensity;
+              gl_FragColor = vec4( glow, 1.0 );
+          }`
+        });
+          
+        earthGlow = new THREE.Mesh( geometry2.clone(), customMaterial.clone() );
+        earthGlow.position.set(map.position.x,map.position.y,map.position.z);
+        earthGlow.scale.multiplyScalar(1.5);
+        scene.add( earthGlow );
     },
     //卫星轨迹
     createMoon() {
@@ -236,11 +259,11 @@ export default {
       const material = new THREE.ShaderMaterial({
         uniforms: {
           iTime: { value: 0 },
-          color: { value: new THREE.Color(0x00ffff)},
+          color: { value: new THREE.Color(0xffffff)},
           color1: { value: new THREE.Color(0x00ffff)}
         },
         side: 2,
-        transparent: true,
+        transparent: false,
         vertexShader: `
           attribute float index;
           uniform vec3 color;
@@ -250,14 +273,16 @@ export default {
           varying float vOpacity;
           void main() {
             vColor = color1;
-            float show = 1000.0 * mod(iTime/15.0, 1.0);
-            float size = 5.0;
-            if(show > index && show < index + 10.0) {
+            float show = 1000.0 * mod(iTime/5.0, 1.0);
+            float size = 10.0;
+            if(show > index && show < index + 30.0) {
               vColor = color;
               vOpacity = 1.0;
-              size *= (index + 10.0 - show)*10.0;
+              size *= (index + 30.0 - show)*2.0;
             }else{
-              vOpacity = 0.5;
+              vOpacity = 1.0;
+              vColor = color1;
+              size = 1.0;
             }
             vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
             gl_Position = projectionMatrix * mvPosition;
@@ -297,7 +322,7 @@ export default {
         this.createCylinder(this.lgltToxyz(item.lon, item.lat, 33))
         if(index !== 0) {
           const { curve, mesh } = this.addLines(this.startPoint, css3Text.position.clone())
-          map.add(mesh)
+          // map.add(mesh)
           this.flyLine(curve)
         }else{
           this.startPoint = css3Text.position
@@ -345,7 +370,7 @@ export default {
           side: THREE.FrontSide,
           transparent: true,
           depthTest: true,
-          depthWrite: false, //禁止写入深度缓冲区数据
+          depthWrite: false, //禁止写入深度缓冲区数据,
           vertexShader,
           fragmentShader: Effect.effect42()
         })
@@ -415,7 +440,7 @@ export default {
     // 路径飞线
     flyLine(curve) {
       var positions = [], index = [], current = [];
-      let points = curve.getPoints(1000)
+      let points = curve.getPoints(5000)
       const geometry = new THREE.BufferGeometry().setFromPoints(points)
 
       for (var j = 0; j < points.length; j ++) {
@@ -432,11 +457,12 @@ export default {
           size: { value: 40 },
           uRange: { value: 100 },
           uTotal: { value: points.length},
-          uColor: { value: new THREE.Color(0x00ffff) },
-          uColor1: { value: new THREE.Color(0x00ffff) }
+          uColor: { value: new THREE.Color(0xff00ff) },
+          uColor1: { value: new THREE.Color(0xff00ff) }
         },
         transparent: true,
         depthTest: true,
+        depthWrite: false, //禁止写入深度缓冲区数据,
         side: 2,
         vertexShader: `
         attribute float index;
@@ -453,9 +479,11 @@ export default {
            // 需要当前显示的索引  
             float showNumber = uTotal * mod(iTime/2.0, 1.0);
             float s = size;
-            if (showNumber > current && showNumber < current + uRange) {
+            // && showNumber < current + uRange
+            if (showNumber > current) {
                 vOpacity = 1.0;
-                s *= (current + uRange - showNumber) / uRange;
+                // s *= (current + uRange - showNumber) / uRange;
+                s = 5.0;
             } else {
                 vOpacity = 0.0;
                 s = 0.0;
@@ -501,31 +529,24 @@ export default {
       render.sortObjects = true
 
       this.views.appendChild(render.domElement)
-
-      let tween = new TWEEN.Tween(camera.position).to({
-        x: 0, y: 10, z: 80
-      }, 3500)
-      tween.easing(TWEEN.Easing.Linear.None)
-      tween.start()
-      
-      let AmbientLight = new THREE.AmbientLight( 0x404040, 3);
+      let AmbientLight = new THREE.AmbientLight( 0x404040, 2);
       scene.add( AmbientLight );
       
-      var DirectionalLight = new THREE.DirectionalLight( 0xffffff, 0.2);
+      var DirectionalLight = new THREE.DirectionalLight( 0xffffff, 0.5);
       DirectionalLight.position.set( 0, 60, 1000 );
       scene.add( DirectionalLight );
-      this.initComposer()
+      // this.initComposer()
     },
     initComposer() {
       composer = new EffectComposer(render)
       composer.addPass(new RenderPass(scene, camera))
 
-      let bloomPass = new UnrealBloomPass()
-      composer.addPass(bloomPass)
+      // let bloomPass = new UnrealBloomPass()
+      // composer.addPass(bloomPass)
 
-      bloomPass.strength = 0.6
-      bloomPass.radius = 0.1
-      bloomPass.threshold = 0.2
+      // bloomPass.strength = 0.6
+      // bloomPass.radius = 0.1
+      // bloomPass.threshold = 0.2
       
       let fxaaShader = new ShaderPass(FXAAShader)
       const pixelRatio = render.getPixelRatio()
@@ -537,7 +558,8 @@ export default {
         let delta = clock.getDelta()
         TWEEN.update()
         controler.update(delta)
-        composer.render(scene, camera)
+        // composer.render(scene, camera)
+        render.render(scene, camera)
         render1.render(scene, camera)
         const elapsedTime = clock.getElapsedTime()
         // Update passes
@@ -552,6 +574,10 @@ export default {
         })
         this.animateId = requestAnimationFrame(this.animation);
         map.rotation.y += 0.002
+        if(!!earthGlow) {
+            earthGlow.material.uniforms.viewVector.value = 
+            new THREE.Vector3().subVectors( camera.position, earthGlow.position );
+        }
     }
   },
   mounted() {
@@ -559,10 +585,17 @@ export default {
     this.createText()
     this.animation()
     this.creatSkyCloud()
+    this.setSkyBox('star')
     this.earthGeometry()
     this.crateMap(dataBJ)
     this.createMoon()
     scene.add(map)
+    let tween = new TWEEN.Tween(camera.position).to({
+      x: 0, y: 10, z: 80
+    }, 4500)
+    tween.delay(500)
+    tween.easing(TWEEN.Easing.Elastic.InOut)
+    tween.start()
     window.onresize = () => {
       render.setSize(this.views.clientWidth, this.views.clientHeight)
       render1.setSize(this.views.clientWidth, this.views.clientHeight)
@@ -570,10 +603,14 @@ export default {
       camera.updateProjectionMatrix();
     }
   },
-  destroyed() {
-    scene.clear()
+  beforeDestroy() {
     cancelAnimationFrame(this.animateId)
+    scene.clear()
     render.dispose()
+    composer = null 
+    scene = null;
+    camera = null;
+    controler = null;
   }
 }
 </script>
@@ -585,6 +622,7 @@ export default {
   .home-view {
     width: 100%;
     height: 100%;
+    background-color: #000;
   }
   .effect-list {
     position: absolute;

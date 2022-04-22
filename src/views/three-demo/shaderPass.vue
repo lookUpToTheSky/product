@@ -14,7 +14,8 @@
 import * as THREE from 'three'
 import Event from 'object3d-events'
 // import Event from '@/utils/object3DEvent.js'
-import { Text3DRenderer, Text3D, Text3DS } from 'three-3d-text'
+// import { Text3DRenderer, Text3D, Text3DS } from 'three-3d-text'
+import { Text3DRenderer, Text3D, Text3DS } from '@/utils/object3DText.js'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls' // 控制器
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer' // 控制器
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass' // 控制器
@@ -116,8 +117,8 @@ export default {
       this.views = this.$refs.views
       scene = new THREE.Scene()
       // scene.background = new THREE.Color(0x000000)
-      // let fog = new THREE.Fog(0xff00ff, 1, 1000)
-      // scene.fog = fog
+      let fog = new THREE.Fog(0xffffff, 1, 1000)
+      scene.fog = fog
 
       camera = new THREE.PerspectiveCamera(75, this.views.clientWidth/this.views.clientHeight, 1, 10000)
       camera.position.set(0, 300, 400);
@@ -219,7 +220,11 @@ export default {
       var format = '.jpg';
       var materialArr = [];
       for(let i=0; i< imgNameArr.length;i++) {
-        materialArr.push(new THREE.MeshBasicMaterial({map:loader.load(rootPath+type+imgNameArr[i]+format),side: THREE.DoubleSide}));
+        materialArr.push(new THREE.MeshBasicMaterial({
+          map:loader.load(rootPath+type+imgNameArr[i]+format),
+          side: THREE.DoubleSide,
+          fog: false
+        }));
       }
       const sky = new THREE.Mesh(skyBox, materialArr);
       scene.add(sky);

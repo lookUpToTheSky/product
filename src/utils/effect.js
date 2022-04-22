@@ -4107,5 +4107,281 @@ float fbm(vec2 p)
         `
         return fragmentShader
     },
+    effect47() {
+        let fragmentShader = `
+            uniform float iTime;
+            varying vec2 vUv;
 
+            vec2 hash( vec2 p )
+            {
+                p = vec2( dot(p,vec2(127.1,311.7)),
+                        dot(p,vec2(269.5,183.3)) );
+                return -1.0 + 2.0*fract(sin(p)*43758.5453123);
+            }
+
+            float noise( in vec2 p )
+            {
+                const float K1 = 0.366025404; // (sqrt(3)-1)/2;
+                const float K2 = 0.211324865; // (3-sqrt(3))/6;
+                
+                vec2 i = floor( p + (p.x+p.y)*K1 );
+                
+                vec2 a = p - i + (i.x+i.y)*K2;
+                vec2 o = (a.x>a.y) ? vec2(1.0,0.0) : vec2(0.0,1.0);
+                vec2 b = a - o + K2;
+                vec2 c = a - 1.0 + 2.0*K2;
+                
+                vec3 h = max( 0.5-vec3(dot(a,a), dot(b,b), dot(c,c) ), 0.0 );
+                
+                vec3 n = h*h*h*h*vec3( dot(a,hash(i+0.0)), dot(b,hash(i+o)), dot(c,hash(i+1.0)));
+                
+                return dot( n, vec3(70.0) );
+            }
+
+            float fbm(vec2 uv)
+            {
+                float f;
+                mat2 m = mat2( 1.6,  1.2, -1.2,  1.6 );
+                f  = 0.5000*noise( uv ); uv = m*uv;
+                f += 0.2500*noise( uv ); uv = m*uv;
+                f += 0.1250*noise( uv ); uv = m*uv;
+                f += 0.0625*noise( uv ); uv = m*uv;
+                f = 0.5 + 0.5*f;
+                return f;
+            }
+
+            // no defines, standard redish flames
+            //#define BLUE_FLAME
+            //#define GREEN_FLAME
+
+            void main( )
+            {
+                vec2 uv = vUv;
+                vec2 q = uv;
+                q.x *= 1.;
+                q.y *= 1.;
+                float strength = floor(q.x+1.);
+                float T3 = max(3., 1.25*strength)*iTime;
+                q.x = mod(q.x,1.)-0.5;
+                q.y -= 0.25;
+                float n = fbm(strength*q - vec2(0,T3));
+                float c = 1. - 16. * pow( max( 0., length(q*vec2(1.8+q.y*1.5,.75) ) - n * max( 0., q.y+.25 ) ),1.2 );
+                float c1 = n * c * (1.5-pow(1.0*uv.y,4.));
+                c1=clamp(c1,0.,1.);
+
+                vec3 col = vec3(1.5*c1, 1.5*c1*c1*c1, c1*c1*c1*c1*c1*c1);
+                
+                #ifdef BLUE_FLAME
+                    col = col.zyx;
+                #endif
+                #ifdef GREEN_FLAME
+                    col = 0.85*col.yxz;
+                #endif
+                
+                float a = c * (1.-pow(uv.y,3.));
+                gl_FragColor = vec4( mix(vec3(0.),col,a), 1.0);
+            }
+        `
+        return fragmentShader
+    },
+    effect48() {
+        let fragmentShader = `
+
+        #define DRAG_MULT 0.048
+        #define ITERATIONS_RAYMARCH 13
+        #define ITERATIONS_NORMAL 48
+        #define WATER_DEPTH 2.1
+        
+        vec3 iMouse = vec3(0.0, 0.0 ,0.0 );
+		uniform vec2 iResolution; 
+
+        uniform float iTime;
+        varying vec2 vUv;
+
+        // returns vec2 with wave height in X and its derivative in Y
+        vec2 wavedx(vec2 position, vec2 direction, float speed, float frequency, float timeshift) {
+            float x = dot(direction, position) * frequency + timeshift * speed;
+            float wave = exp(sin(x) - 1.0);
+            float dx = wave * cos(x);
+            return vec2(wave, -dx);
+        }
+
+        float getwaves(vec2 position, int iterations){
+            float iter = 0.0;
+            float phase = 6.0;
+            float speed = 2.0;
+            float weight = 1.0;
+            float w = 0.0;
+            float ws = 0.0;
+            for(int i=0;i<iterations;i++){
+                vec2 p = vec2(sin(iter), cos(iter));
+                vec2 res = wavedx(position, p, speed, phase, iTime);
+                position += normalize(p) * res.y * weight * DRAG_MULT;
+                w += res.x * weight;
+                iter += 12.0;
+                ws += weight;
+                weight = mix(weight, 0.0, 0.2);
+                phase *= 1.18;
+                speed *= 1.07;
+            }
+            return w / ws;
+        }
+
+        float raymarchwater(vec3 camera, vec3 start, vec3 end, float depth){
+            vec3 pos = start;
+            float h = 0.0;
+            float hupper = depth;
+            float hlower = 0.0;
+            vec2 zer = vec2(0.0);
+            vec3 dir = normalize(end - start);
+            for(int i=0;i<318;i++){
+                h = getwaves(pos.xz * 0.1, ITERATIONS_RAYMARCH) * depth - depth;
+                if(h + 0.01 > pos.y) {
+                    return distance(pos, camera);
+                }
+                pos += dir * (pos.y - h);
+            }
+            return -1.0;
+        }
+
+        float H = 0.0;
+        vec3 normal(vec2 pos, float e, float depth){
+            vec2 ex = vec2(e, 0);
+            H = getwaves(pos.xy * 0.1, ITERATIONS_NORMAL) * depth;
+            vec3 a = vec3(pos.x, H, pos.y);
+            return normalize(cross(normalize(a-vec3(pos.x - e, getwaves(pos.xy * 0.1 - ex.xy * 0.1, ITERATIONS_NORMAL) * depth, pos.y)), 
+                                normalize(a-vec3(pos.x, getwaves(pos.xy * 0.1 + ex.yx * 0.1, ITERATIONS_NORMAL) * depth, pos.y + e))));
+        }
+        mat3 rotmat(vec3 axis, float angle)
+        {
+            axis = normalize(axis);
+            float s = sin(angle);
+            float c = cos(angle);
+            float oc = 1.0 - c;
+            return mat3(oc * axis.x * axis.x + c, oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s, 
+            oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c,           oc * axis.y * axis.z - axis.x * s, 
+            oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c);
+        }
+
+        vec3 getRay(vec2 uv){
+            vec2 Resolution = iResolution.xy;
+            vec2 Mouse = iMouse.xy / Resolution;
+            uv = (uv * 2.0 - 1.0) * vec2(Resolution.x / Resolution.y, 1.0);
+            vec3 proj = normalize(vec3(uv.x, uv.y, 1.0) + vec3(uv.x, uv.y, -1.0) * pow(length(uv), 2.0) * 0.05);	
+            if(Resolution.x < 400.0) return proj;
+            vec3 ray = rotmat(vec3(0.0, -1.0, 0.0), 3.0 * (Mouse.x * 2.0 - 1.0)) * rotmat(vec3(1.0, 0.0, 0.0), 1.5 * (Mouse.y * 2.0 - 1.0)) * proj;
+            return ray;
+        }
+
+        float intersectPlane(vec3 origin, vec3 direction, vec3 point, vec3 normal)
+        { 
+            return clamp(dot(point - origin, normal) / dot(direction, normal), -1.0, 9991999.0); 
+        }
+
+        vec3 getatm(vec3 ray, float roughness){
+            vec3 sharp = mix(vec3( 0.0293, 0.0698, 0.1717) * 10.0, vec3(3.0), pow(1.0 - ray.y, 8.0));
+            vec3 rough = vec3(vec3( 0.0293, 0.0698, 0.1717) + vec3(1.0));
+            return mix(sharp, rough, roughness);
+        }
+
+        float sun(vec3 ray){
+            return pow(max(0.0, dot(ray, normalize(vec3(1.0, 1.0, 0.0)))), 668.0) * 110.0;
+        }
+
+        vec3 getColor(vec2 uv){
+            vec3 ray = getRay(uv);
+            
+            if(ray.y >= -0.01){
+                vec3 C = getatm(ray, 0.0) * 1.0 + sun(ray) * 2.0;
+                return C; 
+            }
+            
+            vec3 wfloor = vec3(0.0, -WATER_DEPTH, 0.0);
+            vec3 wceil = vec3(0.0, 0.0, 0.0);
+            vec3 orig = vec3(0.0, 2.0, 0.0);
+            float hihit = intersectPlane(orig, ray, wceil, vec3(0.0, 1.0, 0.0));
+            float lohit = intersectPlane(orig, ray, wfloor, vec3(0.0, 1.0, 0.0));
+            vec3 hipos = orig + ray * hihit;
+            vec3 lopos = orig + ray * lohit;
+            float dist = raymarchwater(orig, hipos, lopos, WATER_DEPTH);
+            vec3 pos = orig + ray * dist;
+
+            vec3 N = normal(pos.xz, 0.01, WATER_DEPTH);
+            vec2 velocity = N.xz * (1.0 - N.y);
+            vec3 R = reflect(ray, N);
+            float roughness = 1.0 - 1.0 / (dist * 0.01 + 1.0);
+            N = normalize(mix(N, vec3(0.0, 1.0, 0.0), roughness));
+            R = normalize(mix(R, N, roughness));
+            R.y = abs(R.y);
+            float fresnel = (0.04 + (1.0-0.04)*(pow(1.0 - max(0.0, dot(-N, ray)), 5.0)));
+            
+            vec3 C = fresnel * (getatm(R, roughness) + sun(R)) * 2.0;
+            
+            return C;
+        }
+
+        vec3 gammacorrect(vec3 c){
+            return pow(c, vec3(1.0 / 2.4));
+        }
+
+        vec3 render(vec2 uv){
+            vec3 ray = getRay(uv);
+            vec3 C = getColor(uv) * 0.3;
+            return gammacorrect(C);  
+        }
+
+        void main()
+        {
+            vec2 uv = vUv;
+
+            gl_FragColor = vec4(render(uv),1.0);
+        }
+        `
+        return fragmentShader
+    },
+    effect49() {
+        let fragmentShader = `
+        uniform vec2 iResolution; 
+        uniform float iTime;
+        varying vec2 vUv;
+
+        vec3 Strand(in vec2 fragCoord, in vec3 color, in float hoffset, in float hscale, in float vscale, in float timescale)
+        {
+            float glow = 0.06 * iResolution.y;
+            float twopi = 6.28318530718;
+            float curve = 1.0 - abs(fragCoord.y - (sin(mod(fragCoord.x * hscale / 100.0 / iResolution.x * 1000.0 + iTime * timescale + hoffset, twopi)) * iResolution.y * 0.25 * vscale + iResolution.y / 2.0));
+            float i = clamp(curve, 0.0, 1.0);
+            i += clamp((glow + curve) / glow, 0.0, 1.0) * 0.4 ;
+            return i * color;
+        }
+        
+        vec3 Muzzle(in vec2 fragCoord, in float timescale)
+        {
+            float theta = atan(iResolution.y / 2.0 - fragCoord.y, iResolution.x - fragCoord.x + 0.13 * iResolution.x);
+            float len = iResolution.y * (10.0 + sin(theta * 20.0 + float(int(iTime * 5.0)) * -35.0)) / 11.0;
+            float d = max(-0.6, 1.0 - (sqrt(pow(abs(iResolution.x - fragCoord.x), 2.0) + pow(abs(iResolution.y / 2.0 - ((fragCoord.y - iResolution.y / 2.0) * 4.0 + iResolution.y / 2.0)), 2.0)) / len));
+            return vec3(d * (1.0 + sin(theta * 10.0 + floor(iTime * 5.0) * 10.77) * 0.5), d * (1.0 + -cos(theta * 8.0 - floor(iTime * 20.0) * 8.77) * 0.5), d * (1.0 + -sin(theta * 6.0 - floor(iTime * 20.0) * 134.77) * 0.5));
+        }
+        
+        void main()
+        {
+            vec2 fragCoord = vUv.xy*iResolution.xy;
+            float timescale = 4.0;
+            vec3 c = vec3(0, 0, 0);
+            c += Strand(fragCoord, vec3(1.0, 0, 0), 0.7934 + 1.0 + sin(iTime) * 30.0, 1.0, 0.16, 10.0 * timescale);
+            c += Strand(fragCoord, vec3(0.0, 1.0, 0.0), 0.645 + 1.0 + sin(iTime) * 30.0, 1.5, 0.2, 10.3 * timescale);
+            c += Strand(fragCoord, vec3(0.0, 0.0, 1.0), 0.735 + 1.0 + sin(iTime) * 30.0, 1.3, 0.19, 8.0 * timescale);
+            c += Strand(fragCoord, vec3(1.0, 1.0, 0.0), 0.9245 + 1.0 + sin(iTime) * 30.0, 1.6, 0.14, 12.0 * timescale);
+            c += Strand(fragCoord, vec3(0.0, 1.0, 1.0), 0.7234 + 1.0 + sin(iTime) * 30.0, 1.9, 0.23, 14.0 * timescale);
+            c += Strand(fragCoord, vec3(1.0, 0.0, 1.0), 0.84525 + 1.0 + sin(iTime) * 30.0, 1.2, 0.18, 9.0 * timescale);
+            c += clamp(Muzzle(fragCoord, timescale), 0.0, 1.0);
+            gl_FragColor = vec4(c, 1.0);
+        }`
+        return fragmentShader
+    },
+    effect50() {
+        let fragmentShader = `
+        `
+        return fragmentShader
+    },
 }
