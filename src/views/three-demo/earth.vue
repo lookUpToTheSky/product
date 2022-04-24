@@ -40,21 +40,38 @@ export default {
   data() {
     return {
       city: [
-        {name: '北京', lon: 116.3, lat: 39.9, rotate: -Math.PI},
-        {name: '长沙', lon: 112.58, lat: 28.12, rotate: -Math.PI },
-        {name: '上海', lon: 120.52, lat: 30.4, rotate: -Math.PI },
-        {name: '重庆', lon: 106.55, lat: 29.57, rotate: -Math.PI },
-        {name: '武汉', lon: 114.17, lat: 30.35, rotate: -Math.PI },
-        {name: '莫斯科', lon: 37.35, lat: 55.45, rotate: -Math.PI }, 
-        {name: '纽约', lon: -73.86, lat: 40.85, rotate: Math.PI }, 
-        {name: '东京', lon: 139.69, lat: 35.69, rotate: -Math.PI }, 
-        {name: '伦敦', lon: 0.15, lat: 51.30, rotate: -Math.PI }, 
-        {name: '巴基斯坦', lon: 73.09, lat: 31.25, rotate: -Math.PI }, 
-        {name: '新加坡', lon: 103.49, lat: 1.21, rotate: -Math.PI },
-        {name: '埃及', lon: 29.66, lat: 26.80, rotate: -Math.PI },
-        {name: '意大利', lon: 12.44, lat: 43.93, rotate: -Math.PI },
-        {name: '澳大利亚', lon: 133.28, lat: -25.16, rotate: -Math.PI },
-        {name: '加拿大', lon: -106.22, lat: 56.12, rotate: -Math.PI },
+        {name: '北京',
+          note: '北京（Beijing），简称“京”，古称燕京、北平，是中华人民共和国的首都、直辖市、国家中心城市、超大城市，国务院批复确定的中国政治中心、文化中心、国际交往中心、科技创新中心。',
+          lon: 116.3, lat: 39.9, rotate: -Math.PI},
+        {name: '长沙',
+          note: '长沙，别称星城，湖南省辖地级市、省会、特大城市，国务院批复确定的长江中游地区重要的中心城市、长株潭城市群中心城市。',
+          lon: 112.58, lat: 28.12, rotate: -Math.PI },
+        {name: '上海',
+        note: '上海，简称“沪”或“申”，是中华人民共和国省级行政区、直辖市、国家中心城市、超大城市、上海大都市圈核心城市，国务院批复确定的中国国际经济、金融、贸易、航运、科技创新中心 [1]  。', lon: 120.52, lat: 30.4, rotate: -Math.PI },
+        {name: '重庆', 
+        note: '重庆，简称“渝”，别称山城，是中华人民共和国省级行政区、直辖市、国家中心城市、超大城市，国务院批复确定的国家重要的中心城市之一、长江上游地区经济中心、国家重要先进制造业中心、西部金融中心、西部国际综合交通枢纽和国际门户枢纽 [221]  。',lon: 106.55, lat: 29.57, rotate: -Math.PI },
+        {name: '武汉', 
+        note: '武汉，简称“汉”，别称江城，是湖北省省会，中部六省唯一的副省级市，特大城市，中国中部地区的中心城市，全国重要的工业基地、科教基地和综合交通枢纽，联勤保障部队机关驻地。',lon: 114.17, lat: 30.35, rotate: -Math.PI },
+        {name: '莫斯科', 
+        note: '莫斯科（俄语：Москва；英语：Moscow），是俄罗斯联邦首都、莫斯科州首府。莫斯科是俄罗斯的政治、经济、文化、金融、交通中心以及最大的综合性城市，是一座国际化大都市。',lon: 37.35, lat: 55.45, rotate: -Math.PI }, 
+        {name: '纽约', 
+        note: '纽约市（New York City，简称：NYC），位于美国纽约州东南部大西洋沿岸，是美国第一大城市及第一大港口，纽约都市圈为世界上最大的都市圈之一，与英国伦敦、中国香港并称为“纽伦港”（Nylonkong）。',lon: -73.86, lat: 40.85, rotate: Math.PI }, 
+        {name: '东京', 
+        note: '东京（日文：東京；英语：Tokyo），日本首都，位于日本关东平原中部，是面向东京湾的国际大都市，日本三大都市圈之一东京都市圈的中心城市。',lon: 139.69, lat: 35.69, rotate: -Math.PI }, 
+        {name: '伦敦', 
+        note: '伦敦，是大不列颠及北爱尔兰联合王国首都，世界金融中心，伦敦占全球外汇交易额的比重超过40%，与纽约和香港并称为“纽伦港”。',lon: 0.15, lat: 51.30, rotate: -Math.PI }, 
+        {name: '巴基斯坦', 
+        note: '巴基斯坦伊斯兰共和国（乌尔都语：اسلامی جمہوریہ پاکستان，英语：Islamic Republic of Pakistan），简称“巴基斯坦”，意为“圣洁的土地”、“清真之国”，95%以上的居民信奉伊斯兰教，是一个多民族伊斯兰国家。国语为乌尔都语。',lon: 73.09, lat: 31.25, rotate: -Math.PI }, 
+        {name: '新加坡', 
+        note: '新加坡共和国（英语：Republic of Singapore），简称新加坡，旧称新嘉坡、星洲或星岛，别称为狮城，是东南亚的一个岛国，政治体制实行议会共和制，首都为新加坡市。',lon: 103.49, lat: 1.21, rotate: -Math.PI },
+        {name: '埃及', 
+        note: '阿拉伯埃及共和国（阿拉伯语：جمهوريّة مصرالعربيّة），简称“埃及”。位于非洲东北部，地处欧亚非三大洲的交通要冲，是大西洋与印度洋之间海上航线的捷径。',lon: 29.66, lat: 26.80, rotate: -Math.PI },
+        {name: '意大利', 
+        note: '意大利共和国（意大利语：Repubblica Italiana；英语：The Republic of Italy），简称意大利（意大利语：Italia；英语：Italy），是一个欧洲国家，主要由南欧的亚平宁半岛及两个位于地中海中的岛屿西西里岛与撒丁岛所组成。国土面积为301333平方公里，人口6024万。',lon: 12.44, lat: 43.93, rotate: -Math.PI },
+        {name: '澳大利亚', 
+        note: '澳大利亚联邦（英语：Commonwealth of Australia），简称“澳大利亚”，其领土面积769.2万平方公里，位于南太平洋和印度洋之间，四面环海，是世界上唯一国土覆盖一整个大陆的国家，因此也称“澳洲”。',lon: 133.28, lat: -25.16, rotate: -Math.PI },
+        {name: '加拿大', 
+        note: '加拿大（英语/法语：Canada），位于北美洲北部。东临大西洋，西濒太平洋，西北部邻美国阿拉斯加州，南接美国本土，北靠北冰洋。',lon: -106.22, lat: 56.12, rotate: -Math.PI },
       ],
       startPoint: {},
       views: null,
@@ -104,7 +121,7 @@ export default {
                             iTime: {
                                 value: 0
                             },
-                            color: { value: new THREE.Color(0xff0000) },
+                            color: { value: new THREE.Color(0x00ffff) },
                             iResolution: {
                                 value: new THREE.Vector2(800, 800)
                             }
@@ -125,7 +142,7 @@ export default {
 
                             d = pow(d, 10.0);
 
-                            vec4 lightColor = vec4(mix(color*d, color, 0.2), 1.0);
+                            vec4 lightColor = vec4(mix(color*d, color, 0.1), 1.0);
 
                             gl_FragColor = lightColor;
                         }`
@@ -170,6 +187,7 @@ export default {
         }
         geometry.setAttribute('position', new THREE.Float32BufferAttribute( positions, 3))
         geometry.setAttribute('color', new THREE.Float32BufferAttribute( colors, 3))
+        // geometry.addAttribute('position', new THREE.BufferAttribute( new Float32Array(positions), 3, true))
 
         const m = new THREE.PointsMaterial({
             // map: this.canvasTexture(),
@@ -201,8 +219,9 @@ export default {
     // 地球
     earthGeometry() {
         const geometry = new THREE.SphereGeometry(30.1, 64, 64);
+        console.log(geometry)
         const material = new THREE.MeshPhongMaterial({ 
-          color: 0xffffff,
+          color: 0xeeeeee,
           transparent: true,
           depthWrite: false,
           alphaMap: new THREE.ImageUtils.loadTexture( 'images/clouds.jpg' )
@@ -368,12 +387,18 @@ export default {
 
       noteElement = document.createElement('div')
       noteElement.className = 'note'
-      noteElement.innerText = '中国'
+      let title = document.createElement('div')
+      title.className = 'title'
+      noteElement.appendChild(title)
+      let child = document.createElement('div')
+      child.className = 'detail'
+      noteElement.appendChild(child)
     },
     showTextNote(g, item) {
       if(noteObj!== null)
         map.remove(noteObj)
-      noteElement.innerText = item.name
+      noteElement.children[0].innerText = item.name
+      noteElement.children[1].innerText = item.note
       noteObj = new CSS2DObject(noteElement)
       noteObj.position.set(g.position.x, g.position.y, g.position.z)
       map.add(noteObj)
@@ -389,6 +414,7 @@ export default {
           side: 2,
           transparent: true,
           depthTest: true,
+          wireframe: true,
           vertexShader,
           fragmentShader: Effect.effect35()
         })
@@ -449,7 +475,8 @@ export default {
               x: target.x,
               y: target.y,
               z: target.z,
-            }, 2000)
+            }, 3000)
+            t.easing(TWEEN.Easing.Quintic.Out)
             t.start()
             camera.lookAt(new THREE.Vector3().copy(target))
             this.showTextNote(g, item)
@@ -546,7 +573,7 @@ export default {
         varying float vOpacity;
         void main() {
            // 需要当前显示的索引  
-            float showNumber = uTotal * mod(iTime/5.0, 1.0);
+            float showNumber = uTotal * mod(iTime/5.0, 1.2);
             float s = size;
             // && showNumber < current + uRange
             if (showNumber > current) {
@@ -600,10 +627,10 @@ export default {
       eventObj = new Event(this.views, scene, camera, false)
 
       this.views.appendChild(render.domElement)
-      let AmbientLight = new THREE.AmbientLight( 0x404040, 2);
+      let AmbientLight = new THREE.AmbientLight( 0x484848);
       scene.add( AmbientLight );
       
-      var DirectionalLight = new THREE.DirectionalLight( 0xffffff, 0.5);
+      var DirectionalLight = new THREE.DirectionalLight( 0xffffff);
       DirectionalLight.position.set( 0, 60, 1000 );
       scene.add( DirectionalLight );
       // this.initComposer()
@@ -666,7 +693,7 @@ export default {
       x: 0, y: 10, z: 80
     }, 4500)
     tween.delay(500)
-    tween.easing(TWEEN.Easing.Elastic.InOut)
+    tween.easing(TWEEN.Easing.Bounce.Out)
     tween.start()
     window.onresize = () => {
       render.setSize(this.views.clientWidth, this.views.clientHeight)
@@ -729,13 +756,28 @@ export default {
   }
 } 
 .note {
+  position: relative;
   width: 120px;
   height: 60px;
-  color: rgb(8, 192, 248);
+  color: #fff;
   padding: 5px 10px;
   background: 100% 100% url('/images/1.png') no-repeat;
   background-position: 5px 24px;
   margin-left: 50px;
   margin-top: -30px;
+}
+.detail {
+  position: absolute;
+  text-align: start;
+  left: calc(100% - 24px);
+  bottom: 10px;
+  z-index: 110;
+  border: 1px solid #00ffff;
+  background: rgba(0,0,0,0.5);
+  width: 150px;
+  line-height: 16px;
+  font-size: 12px;
+  padding: 5px;
+  color: #fff;
 }
 </style>

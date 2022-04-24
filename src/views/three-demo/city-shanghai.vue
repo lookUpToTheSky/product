@@ -638,15 +638,15 @@ export default {
 
                         float indexMix = vPosition.z / 4.0;
                         
-                        vec3 lightColor = vec3(1.0, 1.0, 1.0);
+                        vec3 lightColor = vec3(0.0, 1.0, 1.0);
 
-                        float t = fract(iTime*0.3);
+                        float t = fract(iTime*0.2);
 
                         if(indexMix < (t + 0.3)) {
                             lightColor = mix(color1, color, indexMix);
                         }
 
-                        if(indexMix > (t + 0.35)) {
+                        if(indexMix > (t + 0.34)) {
                             lightColor = mix(color1, color, indexMix);
                         }
 
