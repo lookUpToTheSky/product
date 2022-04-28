@@ -194,7 +194,7 @@ export default {
                 });
                 new THREE.AudioLoader().load( './obj/mmd/mmd.mp3', ( buffer ) => {
                     const listener = new THREE.AudioListener();
-                    audio = new THREE.Audio( listener ).setBuffer( buffer );
+                    audio = new THREE.PositionalAudio( listener ).setBuffer( buffer );
                     audio.setLoop(true)
                     scene.add( mesh )
                     scene.add( listener )
@@ -211,7 +211,7 @@ export default {
     setVolume() {
         let l = this.getDistance({x: 0,y: 0, z: 0}, camera.position)
         let v = Number((30/l > 1 ? 1 : 30/l).toFixed(1))
-        audio.setVolume(v)
+        audio.setRefDistance( l )
     },
     init() {
       this.views = this.$refs.views
@@ -306,6 +306,7 @@ export default {
             mmdhelper.update(delta)
         }
         if(audio) this.setVolume()
+        
         if(mixer) mixer.update(delta)
         const elapsedTime = clock.getElapsedTime()
         // Update passes

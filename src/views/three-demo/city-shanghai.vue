@@ -12,7 +12,6 @@
 
 <script>
 import * as THREE from 'three'
-import EVENT from '@/utils/object3DEvent'
 import * as maptalks from 'maptalks'
 import 'maptalks/dist/maptalks.css'
 import { ThreeLayer } from 'maptalks.three'
@@ -34,7 +33,7 @@ const vertexShader = `
         vPosition = position;
     }
 `;
-let map, threeLayer;
+let map, threeLayer, mixer;
 let render1, clock = new THREE.Clock();
 var effectList = [], object3DEvent = null;
 export default {
@@ -44,6 +43,7 @@ export default {
       views: null,
       animateId: null,
       roadLine: [],
+      loading: true,
       lineList: [
         {start: {x: 121.5414432810934, y: 31.27838908582774}, end: {x: 121.50087945105042, y: 31.240537712123086}},
         {start: {x: 121.50087945105042, y: 31.240537712123086}, end: {x: 121.50087945105042, y: 31.240537712123086}},
@@ -234,12 +234,6 @@ export default {
           T3.start()
           T3.chain(T4)
           T4.chain(T3)
-
-          eightGeo.on('hover', function () {
-            eightGeo.material.color.set(0x00ffff)
-          }, function() {
-            eightGeo.material.color.set(color)
-          })
         })
         
     },
@@ -408,33 +402,10 @@ export default {
             textList.push(text)
           })
           this.roadLine.push({ name: item.kn, line: temp })
-        //   var line = new maptalks.LineString(temp,
-        //     {
-        //       arrowStyle : null, // arrow-style : now we only have classic
-        //       arrowPlacement : 'vertex-last', // arrow's placement: vertex-first, vertex-last, vertex-firstlast, point
-        //       visible : true,
-        //       editable : true,
-        //       cursor : null,
-        //       shadowBlur : 0,
-        //       shadowColor : 'black',
-        //       draggable : false,
-        //       dragShadow : false, // display a shadow during dragging
-        //       drawOnAxis : null,  // force dragging stick on a axis, can be: x, y
-        //       symbol: {
-        //         'lineColor' : colors[i],
-        //         'lineWidth' : 2,
-        //         'textPlacement' : 'vertex'
-        //       }
-        //   });
-        //   let layer = new maptalks.VectorLayer(item.kn, line).addTo(map);
-        //   layer.setZIndex(2)
             this.threeLine(list, '#' + item.cl)
         })
         let layer = new maptalks.VectorLayer('地铁').addTo(map);
         layer.setZIndex(-1)
-        // textList.forEach(ele => {
-        //   ele.addTo(layer)
-        // })
       })
     },
     threeLine(list, color) {
@@ -512,17 +483,15 @@ export default {
               })
             ])
         }) 
+
         threeLayer = new ThreeLayer('模型', {
             forceRenderOnMoving: true,
             forceRenderOnRotating: true,
             animation: true
         });
-        // threeLayer.setZIndex(10)
-        threeLayer.addTo(map);
         threeLayer.prepareToDraw = this.initScene
         map.on('click', (params) => {
           let point = threeLayer.coordinateToVector3(params.coordinate)
-          console.log(params.coordinate)
           map.animateTo({
             center: params.coordinate,
             zoom: 16,
@@ -550,6 +519,9 @@ export default {
                 const renderer = this.context, camera = this.camera, scene = this.scene;
                 TWEEN.update()
                 const elapsedTime = clock.getElapsedTime()
+                if(mixer){
+                  mixer.update(elapsedTime)
+                }
                 // Update passes
                 effectList.forEach(object => {
                     if(object.material && object.material.uniforms){
@@ -566,15 +538,11 @@ export default {
                 this.completeRender();
             }
         }
-        threeLayer.setRendererRenderScene()
         this.cityRoadLine()
+        threeLayer.addTo(map);
+        threeLayer.setRendererRenderScene()
     },
     initScene(gl, scene, camera) {
-        object3DEvent = new EVENT(
-          this.views,
-          scene,
-          camera,
-          false)
         let AmbientLight = new THREE.AmbientLight( 0x404040);
         scene.add( AmbientLight );
         var DirectionalLight = new THREE.DirectionalLight( 0xffffff, 2);
@@ -665,6 +633,26 @@ export default {
                 const extrudePolygons = threeLayer.toExtrudePolygons(polygons, { topColor: '#fff', interactive: true }, material);
                 effectList.push(extrudePolygons.object3d)
                 threeLayer.addMesh(extrudePolygons)
+            
+                extrudePolygons.object3d.scale.set(1, 1, 0.2)
+
+
+                let scaleTrack = new THREE.KeyframeTrack(
+                  'extrudePolygons.object3d.scale',
+                  [0, 500], 
+                  [1, 1, 0.2, 1, 1, 1],
+                  THREE.WrapAroundEnding,
+                  )
+                let clip = new THREE.AnimationClip('default', 500, [scaleTrack])
+
+                mixer = new THREE.AnimationMixer(extrudePolygons.object3d)
+                let actions = mixer.clipAction(clip)
+                actions.loop = THREE.LoopOnce;
+                actions.clampWhenFinished = true;
+                setTimeout(() => {
+                  actions.play()
+                }, 1000)
+                this.loading = false
             }
         }
         xhr.send()
@@ -695,11 +683,11 @@ export default {
     this.loadMap()
     map.on('resize', () => {
       render1.setSize(this.views.clientWidth, this.views.clientHeight)
-      if(object3DEvent) object3DEvent.resize()
     })
   },
   destroyed() {
     effectList = []
+    map = null
     threeLayer.getScene().clear()
   }
 }
@@ -757,7 +745,6 @@ li > button {
 
 <style lang="scss">
 .maptalks-layer-switcher {
-    
   .panel {
     padding: 20px 20px 0 0 !important;
   }
@@ -771,5 +758,17 @@ li > button {
   font-family: 'kaiti';
   border: 1px solid #fff;
   background-image: linear-gradient(to bottom,  rgba(5, 102, 248, 0.6), rgba(5, 37, 75, 0.527));
+}
+.mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  z-index: 99;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,1);
 }
 </style>

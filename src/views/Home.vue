@@ -2,7 +2,7 @@
   <div class="home">
     <ul>
       <li class="inner-wrap" v-for="(item, i) in list" :key="i">
-        <h5 class="title">{{item.year}}</h5>
+        <h5 class="animate__animated animate__bounce title">{{item.year}}</h5>
         <div class="box">
           <el-skeleton @click.native="$router.push(val.url)" v-for="(val, index) in item.product" :key="index" class="skeleton" :loading="loading" animated>
             <template slot="template">
@@ -12,7 +12,7 @@
               </div>
             </template>
             <template>
-              <el-card class="item" :body-style="{ padding: '0px', marginBottom: '1px' }">
+              <el-card class="item animate__animated animate__backInLeft animate__faster" :body-style="{ padding: '0px', marginBottom: '1px' }">
                   <el-image
                     class="image"
                     style="width: 200px; height: 200px"
@@ -98,9 +98,7 @@ export default {
     transition: all 0.3s;
     margin: 10px;
     &:hover {
-      transform-origin: center;
-      transform: skewY(-15deg) rotateY(30deg);
-      box-shadow: 0 10px 20px 5px #ccc;
+      box-shadow: 0 0 20px 5px #ccc;
     }
   }
 }

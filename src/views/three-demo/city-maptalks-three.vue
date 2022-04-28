@@ -12,7 +12,6 @@
 
 <script>
 import * as THREE from 'three'
-import EVENT from '@/utils/object3DEvent'
 import * as maptalks from 'maptalks'
 import 'maptalks/dist/maptalks.css'
 import { ThreeLayer } from 'maptalks.three'
@@ -36,7 +35,7 @@ const vertexShader = `
 `;
 let map, threeLayer;
 let render1, clock = new THREE.Clock();
-var effectList = [], object3DEvent = null;
+var effectList = [];
 export default {
   data() {
     return {
@@ -215,31 +214,6 @@ export default {
           T3.start()
           T3.chain(T4)
           T4.chain(T3)
-
-          eightGeo.on('click', function() {
-            let textObj = new maptalks.Marker(
-              coordinate,
-              {
-                'properties' : {
-                  'name' : text
-                },
-                'symbol' : {
-                  'textName' : '{name}',  
-                  'textSize': 20,
-                  'textFill': '#ffffff',
-                  'textHaloFill': '#000000',
-                  'textHaloRadius': 2,
-                }
-              }
-            )
-            textObj.addTo(map._layers[0])
-          })
-
-          eightGeo.on('hover', function () {
-            eightGeo.material.color.set(0x00ffff)
-          }, function() {
-            eightGeo.material.color.set(color)
-          })
         })
         
     },
@@ -573,11 +547,6 @@ export default {
         this.cityRoadLine()
     },
     initScene(gl, scene, camera) {
-        object3DEvent = new EVENT(
-          this.views,
-          scene,
-          camera,
-          false)
         let AmbientLight = new THREE.AmbientLight( 0x404040);
         scene.add( AmbientLight );
         var DirectionalLight = new THREE.DirectionalLight( 0xffffff, 2);
@@ -686,12 +655,12 @@ export default {
     this.loadMap()
     map.on('resize', () => {
       render1.setSize(this.views.clientWidth, this.views.clientHeight)
-      if(object3DEvent) object3DEvent.resize()
     })
   },
   destroyed() {
     effectList = []
-    // threeLayer.getScene().clear()
+    map = null
+    threeLayer.getScene().clear()
   }
 }
 </script>
@@ -748,7 +717,6 @@ li > button {
 
 <style lang="scss">
 .maptalks-layer-switcher {
-    
   .panel {
     padding: 20px 20px 0 0 !important;
   }

@@ -1,9 +1,13 @@
 <template>
   <div class="earth_home">
     <div class="home-view" ref="views"></div>
-    <div class="back">
-        <el-button @click="$router.go(-1)" type="primary">退 出</el-button>
+    <div class="back animate__animated animate__fadeInUp animate__slow animate__delay-3s" >
+        <el-button @click="$router.go(-1)" type="primary" size="mini">退 出</el-button>
     </div>
+    <div class="header animate__animated animate__fadeInDown animate__slow animate__delay-1s"></div>
+    <div class="left animate__animated animate__fadeInLeft animate__slow animate__delay-2s"></div>
+    <div class="right animate__animated animate__fadeInRight animate__slow animate__delay-2s"></div>
+    <div class="footer animate__animated animate__fadeInUp animate__slow animate__delay-3s"></div>
   </div>
 </template>
 
@@ -218,8 +222,7 @@ export default {
     },
     // 地球
     earthGeometry() {
-        const geometry = new THREE.SphereGeometry(30.1, 64, 64);
-        console.log(geometry)
+        const geometry = new THREE.SphereGeometry(30.2, 64, 64);
         const material = new THREE.MeshPhongMaterial({ 
           color: 0xeeeeee,
           transparent: true,
@@ -379,11 +382,12 @@ export default {
       render2.setSize(this.views.clientWidth, this.views.clientHeight)
       this.views.appendChild(render2.domElement)
       controler = new OrbitControls(camera, render2.domElement);
-      controler.minDistance = 40;
+      controler.minDistance = 35;
       controler.maxDistance = 300;
       controler.enableDamping = true
       controler.autoRotate = true
       controler.autoRotateSpeed = -0.2
+      controler.zoomSpeed = 0.5
 
       noteElement = document.createElement('div')
       noteElement.className = 'note'
@@ -690,10 +694,10 @@ export default {
     this.createMoon()
     scene.add(map)
     let tween = new TWEEN.Tween(camera.position).to({
-      x: 0, y: 10, z: 80
-    }, 4500)
+      x: 0, y: 10, z: 100
+    }, 2500)
     tween.delay(500)
-    tween.easing(TWEEN.Easing.Bounce.Out)
+    tween.easing(TWEEN.Easing.Quintic.Out)
     tween.start()
     window.onresize = () => {
       render.setSize(this.views.clientWidth, this.views.clientHeight)
@@ -717,10 +721,12 @@ export default {
 }
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .earth_home {
   width: 100vw;
   height: 100vh;
+  overflow: hidden;
+  position: relative;
   .home-view {
     width: 100%;
     height: 100%;
@@ -739,14 +745,52 @@ export default {
     font-size: 14px;
     margin-bottom: 2px;
   }
-  .back, .run {
+  .back {
     position: absolute;
-    bottom: 10px;
+    bottom: 190px;
     right: 50%;
-    z-index: 99;
+    z-index: 2019;
     transform: translateX(50%);
     display: flex;
   }
+} 
+.header, .left, .right, .footer {
+  position: absolute;
+  z-index: 100;
+  background-color: rgba(5, 88, 241, 0.5);
+}
+.header {
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 80px;
+  z-index: 20;
+}
+
+.left {
+  left: 0;
+  top: 80px;
+  width: 220px;
+  height: calc(100vh - 80px);
+}
+
+.right {
+  right: 0;
+  top: 80px;
+  width: 220px;
+  height: calc(100vh - 80px);
+}
+
+.footer {
+  left: 220px;
+  bottom: 0;
+  width: calc(100vw - 440px);
+  height: 180px;
+}
+</style>
+
+<style lang="scss">
+
   .city {
     /* box-shadow: 0 0 12px 2px inset red; */
     padding: 0 5px;
@@ -754,8 +798,7 @@ export default {
     font-size: 12px;
     color: #fff;
   }
-} 
-.note {
+  .note {
   position: relative;
   width: 120px;
   height: 60px;
