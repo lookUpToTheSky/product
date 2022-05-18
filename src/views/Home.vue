@@ -63,7 +63,7 @@ export default {
     }
   },
   mounted() {
-    console.log(21)
+    console.log(2122)
     setTimeout(() => {
       this.loading = false
     }, 300)
