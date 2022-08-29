@@ -39,7 +39,7 @@ export default {
         {
           year: 2022, 
           product:[
-            {productName: '总览', url: '/map-preview', img: require('@/assets/img/excle.png')}
+            {productName: '地图总览', url: '/map-preview', img: require('@/assets/img/map-nav.jpg')}
           ]
         },
         {
