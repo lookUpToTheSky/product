@@ -71,7 +71,7 @@ export default {
                         value: new THREE.Vector2(800, 800)
                     },
                     map: {
-                      value: new THREE.ImageUtils.loadTexture('./images/smokeparticle.png')
+                      value: new THREE.TextureLoader().load('./images/smokeparticle.png')
                     }
                 },
                 side: 2,
@@ -261,8 +261,7 @@ export default {
         geometry.setAttribute('index', new THREE.Float32BufferAttribute(index, 1))
         var matLine = new THREE.LineBasicMaterial( {
             vertexColors: true,
-            transparent: true,
-            dashed: false
+            transparent: true
         } );
         return {
           curve,
@@ -344,7 +343,7 @@ export default {
           new THREE.MeshBasicMaterial({
             color: 0xcccccc,
             side: THREE.BackSide,
-            map: new THREE.ImageUtils.loadTexture('./images/sky.jpg')
+            map: new THREE.TextureLoader().load('./images/sky.jpg')
           })
         )
         scene.add(sky)
@@ -372,42 +371,11 @@ export default {
             scene.add(obj)
         })
     },
-    loadGeoJson() {
-      const xhr = new XMLHttpRequest()
-      xhr.open('get', './geojson/cs_city.json', true)
-      xhr.onload = () => {
-        if(xhr.status === 200) {
-          const data = JSON.parse(xhr.response)
-          const cityArr = []
-          data.features.forEach(item => {
-              item.geometry.coordinates.forEach(ele => {
-                let shape = new THREE.Shape()
-                ele.forEach((val, i) => {
-                  let x = val[0], y = val[1];
-                  i === 0 ?  shape.moveTo(x, y) : shape.lineTo(x,y)
-                })
-                let extrudeSettings = { 
-                  depth: item.properties.height/20000,
-                  curveSegments: 6,
-                  bevelEnabled: false
-                }
-                let Sgeo = new THREE.ExtrudeGeometry( shape, extrudeSettings );
-                cityArr.push(Sgeo)
-              })
-          })
-          const mesh = this.meryBuffer(cityArr)
-          mesh.rotateX(-Math.PI/2)
-          mesh.scale.set(3000,3000,3000)
-          mesh.position.y = 10
-
-          scene.add(mesh)
-          this.createEffect()
-        }
-      }
-      xhr.send()
-    },
-    meryBuffer(objects) {
-      let geometry = mergeBufferGeometries(objects)
+    cityBuffer({position, normal, uv}) {
+      const geometry = new THREE.BufferGeometry()
+      geometry.attributes.position = new THREE.Float32BufferAttribute(position.array, 3)
+      geometry.attributes.normal = new THREE.Float32BufferAttribute(normal.array, 3)
+      geometry.attributes.uv = new THREE.Float32BufferAttribute(uv.array, 2)
       geometry.center()
       const mesh = new THREE.Mesh(geometry, new THREE.ShaderMaterial({
           uniforms: {
@@ -423,7 +391,11 @@ export default {
           vertexShader: vertexShader,
           fragmentShader: Effect.effect45()
       }))
-      return mesh
+      mesh.rotateX(-Math.PI/2)
+      mesh.scale.set(3000,3000,3000)
+      mesh.position.y = 10
+      scene.add(mesh)
+      this.createEffect()
     },
     init() {
       this.views = this.$refs.views
@@ -605,7 +577,7 @@ export default {
     this.initComposer()
     this.animation()
     this.createSky()
-    this.loadGeoJson()
+    // this.loadGeoJson()
     this.createLineFly()
     this.createPointGeo()
     this.setSkyBox('dark')
@@ -615,6 +587,13 @@ export default {
       render1.setSize(this.views.clientWidth, this.views.clientHeight)
       camera.aspect = this.views.clientWidth / this.views.clientHeight//相机重置可视范围
       camera.updateProjectionMatrix();
+    }
+    let work = new Worker('./js/work.js')
+    work.postMessage('加载模型')
+    work.onmessage = (e) => {
+      console.log(e)
+      this.cityBuffer(e.data)
+      work.terminate();
     }
   },
   destroyed() {

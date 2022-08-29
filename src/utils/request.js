@@ -1,3 +1,10 @@
+/*
+ * @Author: your Name
+ * @Date: 2022-05-18 09:34:35
+ * @LastEditors: your Name
+ * @LastEditTime: 2022-05-20 14:59:05
+ * @Description: 
+ */
 import axios from 'axios'
 const service = axios.create({
   baseURL: process.env.VUE_APP_BASE_API, // url = base url + request url

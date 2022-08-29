@@ -159,7 +159,7 @@ export default {
         }
         
 		void main() {  
-            float len = distanceTo(vec2(0.5, 0.5), vec2(vUv.x, vUv.y)) * 2.0; 
+            float len = distanceTo(vec2(0.5, 0.5), vec2(vUv.x, vUv.y)); 
             vec2 p = (vUv-0.5) * 4.0;
             vec3 color = hsb2rgb(vec3(fract(iTime*.1),1.,1.));
             float r = length(p);
@@ -642,7 +642,7 @@ export default {
         }
 		void main() { 
             vec2 uv = (vUv - 0.5) * 1.8;
-			gl_FragColor = vec4(calc(uv) * color, calc(uv).x);
+			gl_FragColor = vec4(calc(uv) * color, pow(calc(uv).x, 5.0));
 		}
 		`;
         return fragmentShader;
@@ -787,11 +787,30 @@ export default {
                 p = 50.0*MOV(1.54,1.7,1.37,1.8,sin(0.1*iTime+7.0)+0.2*iTime);
                 finalColor += bip2(uv,c+p) * red;
             }
-
-			gl_FragColor = vec4( finalColor, finalColor.y+finalColor.x+finalColor.z );
+            vec3 color = mix(finalColor, vec3(1.0,1.0,1.0), 0.1);
+			gl_FragColor = vec4( color, finalColor.y+finalColor.x+finalColor.z );
 			
 		}
 		`;
+        return fragmentShader;
+    },
+    effect8_1() {
+        const fragmentShader = `
+        varying vec2 vUv;
+        uniform float iTime;
+        void main() {
+            vec3 color = vec3(0.0, 1.0, 1.0);
+            float d = length(vUv - vec2(0.5,0.5));
+            float time = sin(clamp(fract(iTime), 0.3, 1.0 ));
+            // color = smoothstep(0.495, 0.5, vUv.y)*vec3(1.0, 1.0, 0.0);
+            // color += smoothstep(0.495, 0.5, vUv.x)*vec3(1.0, 0.0, 1.0);
+            // color = smoothstep(d+0.01, d, vUv.y)*color;
+            float f = (1.0 - pow(smoothstep(0.3, 0.4, d), 200.0))*0.2;
+            color += pow(smoothstep(0.25, 0.30, d) - smoothstep(0.30, 0.33, d), 100.0);
+
+            gl_FragColor = vec4(color, f+color.r);
+        }
+        `
         return fragmentShader;
     },
     effect9() {
@@ -3684,6 +3703,30 @@ float fbm(vec2 p)
 		`;
         return fragmentShader;
     },
+    effect35_1() {
+        const fragmentShader = `
+		uniform float iTime; 
+        varying vec2 vUv;  
+        uniform vec3 color; 
+
+        void main(void) {
+            float time = sin(fract(iTime / 2.5)) * 0.8 - 0.3;
+            float d = length(vUv - vec2(0.5));
+            vec3 f = (smoothstep(0.125, 0.12, d))*color;
+            if(d < 0.295+time) {
+                f += (smoothstep(0.0+time, 0.295+time, d))*0.6*color; 
+            }else if(d < 0.3+time) {
+                f += (smoothstep(0.3+time, 0.295+time, d))*0.6*color; 
+            }
+            if(d < 0.5+time ) {
+                f += (smoothstep(0.0+time, 0.5+time, d))*0.08*color; 
+            }
+            vec3 colors = mix(f, color, color);
+            gl_FragColor = vec4(colors, f.r+f.g+f.b);
+        }
+		`;
+        return fragmentShader;
+    },
     effect36() {
         const fragmentShader = `
 		uniform float iTime; 
@@ -3755,14 +3798,14 @@ float fbm(vec2 p)
  
         void main(void) {
             vec2 uv = (vUv - 0.5) * 30.0;
-            float t = 1.5 * iTime;
+            float t = 0.5 * iTime;
             float st = sin(t), ct = cos(t);
             m2 = mat2(ct, st, -st, ct);
-            vec2 p = water(uv + 2.* iTime) + 2.;
+            vec2 p = water(uv + 0.2* iTime) + 2.;
             float c = length(p) / 7.;
             c = clamp(pow(c, 3.), 0., 1.);
             vec3 col = texture2D(iChannel1, uv / 20. + p / 45.).rgb;    
-            col = mix(col, vec3( .7, .7, .9), c);
+            col = vec3( 1., 1., 1.) * c + col;
             gl_FragColor = vec4(col, 1.0);
         }
 		`;
@@ -4070,7 +4113,7 @@ float fbm(vec2 p)
             vec4 texColor = mapcol * s;
             
             // Output to screen   
-            gl_FragColor = vec4(color, color.g);//Set the screen pixel to that color
+            gl_FragColor = vec4(color, pow(color.r + color.g+ color.b, 2.0));//Set the screen pixel to that color
         
         }
         `

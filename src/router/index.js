@@ -65,6 +65,11 @@ const routes = [
     path: '/previewExcle',
     name: 'previewExcle',
     component: () => import('../views/stores-demo/previewExcle/index.vue')
+  },
+  {
+    path: '/map-preview',
+    name: 'map-preview',
+    component: () => import('../views/three2022/map-three/index.vue')
   }
 ]
 

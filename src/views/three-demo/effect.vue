@@ -33,7 +33,7 @@ export default {
       views: null,
       effectList: Effect,
       total: 0,
-      activeIndex: 'effect44'
+      activeIndex: 'effect35_1'
     }
   },
   methods: {
@@ -95,7 +95,7 @@ export default {
           })
           // let geometry = new THREE.CylinderGeometry(10, 10, 100, 16, 16, true);
           const geometry = new THREE.CircleGeometry(50, 64);
-          let Octahedron = new THREE.SphereGeometry(30, 32);
+          let Octahedron = new THREE.BoxGeometry(50, 10, 30, 64);
           let OctahedronMesh = new THREE.Mesh(Octahedron, material);
           OctahedronMesh.position.y = 10;
           let plane = new THREE.Mesh(geometry, material);
@@ -155,7 +155,7 @@ export default {
     setNewEffect(effect, k) {
      this.activeIndex = k
      scene.clear()
-    this.setSkyBox('star')
+    this.setSkyBox('sky')
      this.getMesh(effect())
     },
     // 创建粒子系统
@@ -191,7 +191,7 @@ export default {
   mounted() {
     this.init()
     this.animation()
-    this.setSkyBox('star')
+    this.setSkyBox('sky')
     window.onresize = () => {
       render.setSize(this.views.clientWidth, this.views.clientHeight)
       camera.aspect = this.views.clientWidth / this.views.clientHeight//相机重置可视范围

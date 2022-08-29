@@ -104,6 +104,26 @@ export default {
       canvasT.repeat.set(1,1)
       return canvasT
     },
+    // 重新计算图形uv
+    accountUvs(geometry) {
+      geometry.computeBoundingBox()
+      const { max, min } = geometry.boundingBox
+      const offset = new THREE.Vector2(0 - min.x, 0 - min.y)
+      const range = new THREE.Vector2(max.x - min.x, max.y - min.y)
+      const uvArray = []
+      const array = geometry.attributes.uv.array
+      const size = geometry.attributes.uv.itemSize
+      for(let i = 0; i < array.length; i++) {
+        let newUv = array[i]
+        if(i%size === 0) {
+          newUv = (newUv + offset.x) / range.x
+        }else {
+          newUv = (newUv + offset.y) / range.y
+        }
+        uvArray.push(newUv)
+      }
+      return uvArray
+    },
     // 地图数据生成三维地图
     crateMap(data) {
       data.features.forEach( (item, index) => {

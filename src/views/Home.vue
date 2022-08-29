@@ -39,6 +39,12 @@ export default {
         {
           year: 2022, 
           product:[
+            {productName: '总览', url: '/map-preview', img: require('@/assets/img/excle.png')}
+          ]
+        },
+        {
+          year: 2021, 
+          product:[
             {productName: '地球', url: '/earth', img: require('@/assets/img/earth.png')},
             {productName: '人物模型', url: '/girl', img: require('@/assets/img/girl.png')},
             {productName: '扫光特效', url: '/shaderPass', img: require('@/assets/img/shaderPass.png')},
@@ -51,19 +57,18 @@ export default {
             {productName: '城市-上海', url: '/city-shangHai', img: require('@/assets/img/sh_city.jpg')}
           ]
         },
-        {
-          year: 2021, 
-          product:[
-            {productName: '在线预览excle', url: '/previewExcle', img: require('@/assets/img/excle.png')}
-          ]
-        }
+        // {
+        //   year: 2021, 
+        //   product:[
+        //     {productName: '在线预览excle', url: '/previewExcle', img: require('@/assets/img/excle.png')}
+        //   ]
+        // }
       ],
       loading: true,
       activeIndex: 1
     }
   },
   mounted() {
-    console.log(2122)
     setTimeout(() => {
       this.loading = false
     }, 300)
