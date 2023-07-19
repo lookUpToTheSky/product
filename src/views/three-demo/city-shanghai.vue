@@ -235,7 +235,6 @@ export default {
           T3.chain(T4)
           T4.chain(T3)
         })
-        
     },
     // 文本
     createText(text, position) {

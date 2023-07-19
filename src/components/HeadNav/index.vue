@@ -1,9 +1,12 @@
 <template>
     <div class="app-main">
         <div class="app-nav">
-          <div class="left">LOGO</div>
+          <div class="left">
+            <img src="@/assets/1-2.png" alt="">
+          </div>
+          <a href="https://threejs.org/examples/#webgl_animation_keyframes" target="_blank" class="center">前往threejs</a>
           <ul class="right">
-            <li class="active">首页</li>
+            <li class="active">3D案例</li>
             <!-- <li>示例</li>
             <li>博客</li> -->
           </ul>
@@ -57,15 +60,30 @@ export default {
   justify-content: space-between;
   padding: 0 20px;
   box-sizing: border-box;
-  .right, .left {
+  .right, .left, .center {
     display: flex;
     line-height: 50px;
     li {
       padding: 0 10px;
       font-size: 15px;
       &.active {
-        color: #0ee945;
+        color: #eee;
       }
+    }
+  }
+  .left {
+    img {
+      margin-top: 6px;
+      width: 35px;
+      height: 35px;
+    }
+  }
+  .center {
+    font-size: 18px;
+    color: #eee;
+    font-weight: 600;
+    &:hover {
+      color: #7da1eb;
     }
   }
 }

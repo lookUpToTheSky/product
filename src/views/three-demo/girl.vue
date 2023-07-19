@@ -18,6 +18,7 @@ import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader' // 加载器
 import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader' // 加载器
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader' // 加载器
 import Effect from '@/utils/effect.js'
+import Dexie from '@/utils/dexie.js'
 const vertexShader = `
 		varying vec3 vPosition;
 		varying vec2 vUv;
@@ -30,6 +31,10 @@ const vertexShader = `
 		`;
 let scene, camera, render, controler, flyControls, trackballControls, clock = new THREE.Clock();
 let mixer, actions;
+let db = new Dexie("db")
+db.version(1).stores({
+    friends: '++id,normal,position,uv,name',
+});
 export default {
   data() {
     return {
@@ -120,7 +125,23 @@ export default {
         mtlLoader.load(mtlName, material => {
             objLoader.setMaterials( material )
             objLoader.setPath(path)
-            objLoader.load(fileName, (obj) => {
+            objLoader.load(fileName, async (obj) => {
+                // console.log(obj, 122)
+                obj.traverse(async child => {
+                  if(child.isMesh) {
+                      let geometry = child.geometry
+                    // let normal = geometry.attributes.normal.array
+                    let position = geometry.attributes.position.array
+                    // let uv = geometry.attributes.uv.array
+                    db.friends.add({
+                      name: "模型",
+                      // normal: normal.join(","),
+                      position: position.join(","),
+                      // uv: uv.join(",")
+                    }) 
+                  }
+                 
+                })
                 obj.scale.set(0.2, 0.22, 0.2)
                 // obj.children[0].material.wireframe = true
                 const material = new THREE.ShaderMaterial({
@@ -177,6 +198,7 @@ export default {
                 child.castShadow = true
               }
             })
+            scene.add(obj)
         })
     },
     init() {
@@ -285,12 +307,32 @@ export default {
             }
         })
         this.animateId = requestAnimationFrame(this.animation);
+    },
+    async createByGeometry(count) {
+      let data = await db.friends.get(count)
+      if(data) {
+        let position = data.position
+        let geometry = new THREE.BufferGeometry()
+        position = position.split(",")
+        const vertices = new Float32Array( position );
+        geometry.setAttribute( 'position', new THREE.BufferAttribute( vertices, 3 ) );
+        const material = new THREE.MeshBasicMaterial( { color: 0xddff99 } );
+        const mesh = new THREE.Mesh( geometry, material );
+        scene.add(mesh)
+        count++
+        this.createByGeometry(count)
+      }
     }
   },
-  mounted() {
+  async mounted() {
     this.init()
-    this.objLoader('./obj/mm/', 'file.obj', 'file.mtl')
+    // let data = await db.friends.get(1)
+    // if(!data) {
+    //   this.objLoader('./obj/car/', 'bugatti.obj', 'bugatti.mtl')
+    // }
+    // this.createByGeometry(1)
     // this.objLoader('./obj/', 'ln.obj', 'ln.mtl')
+    this.objLoader('./obj/mm/', 'file.obj', 'file.mtl')
     // this.fbxLoader('./fbx/mn.FBX')
     this.fbxLoader('./fbx/xmm/xmm.FBX')
     this.animation()

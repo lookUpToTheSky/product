@@ -70,6 +70,11 @@ const routes = [
     path: '/map-preview',
     name: 'map-preview',
     component: () => import('../views/three2022/map-three/index.vue')
+  },
+  {
+    path: '/iframe',
+    name: 'iframe',
+    component: () => import('../views/iframe.vue')
   }
 ]
 

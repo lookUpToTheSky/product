@@ -1,18 +1,20 @@
 <template>
   <div class="earth_home" ref="threeWrap">
+     <div class="back">
+        <el-button @click="$router.go(-1)" type="primary" size="small">返 回</el-button>
+    </div>
     <div class="home-view" ref="views"></div>
     <!-- <div class="video-wrap" ref="videoWrap">
       <video id="video" src="/source/earth_v.mp4" ref="video" muted></video>
     </div> -->
     <div class="loading-wrap" ref="loading">
       <span>正在加载资源({{ progress }}%)</span>
-      <Progress
-        :percent="progress"
-        :stroke-width="15"
-        status="active"
-        style="width: 240px"
-        hide-info
-      ></Progress>
+      <el-progress
+        :percentage="progress"
+        :stroke-width="10"
+        style="width: 240px; margin-top: 5px"
+        :show-text="false"
+      ></el-progress>
     </div>
     <!-- 底部 -->
     <div class="footer" v-if="videoEnded">
@@ -48,8 +50,8 @@
             class="type-icon"
           />
           <div>
-            <div class="title"></div>
-            <div class="detail"></div>
+            <div class="point-note-title"></div>
+            <div class="point-note-detail"></div>
           </div>
           <img
             class="right-icon"
@@ -408,8 +410,8 @@
               })
             }
           })
-          map.add(obj)
           this.progress += 20
+          map.add(obj)
         }, (xhr) => {
           console.log(xhr, 1)
           // progress1 = Math.floor(xhr.loaded / xhr.total * 20)
@@ -427,10 +429,10 @@
               })
             }
           })
-          map.add(obj)
           this.progress += 20
+          map.add(obj)
         }, (xhr) => {
-          console.log(xhr, 2)
+          // console.log(xhr, 2)
           // progress2 = Math.floor(xhr.loaded / xhr.total * 20)
           // this.progress += progress2 - lastLoad2
           // lastLoad2 = progress2
@@ -622,7 +624,7 @@
         if (infoObj !== null) {
           scene.remove(infoObj, infoStartPoint)
         }
-        if (item.mapSubTitle === infoElement.querySelector('.detail').innerText && this.noteShow) {
+        if (item.mapSubTitle === infoElement.querySelector('.point-note-detail').innerText && this.noteShow) {
           this.noteShow = false
           m.material.uniforms.animate.value = false
           return false
@@ -640,8 +642,8 @@
           m.material.uniforms.animate.value = true
         }
         this.showNodeData = this.nodeData.filter(x => x.factoryId === item.id)
-        infoElement.querySelector('.title').innerText = item.name
-        infoElement.querySelector('.detail').innerText = item.mapSubTitle
+        infoElement.querySelector('.point-note-title').innerText = item.name
+        infoElement.querySelector('.point-note-detail').innerText = item.mapSubTitle
         infoObj = new CSS2DObject(infoElement)
         const v3 = new THREE.Vector3()
         g.getWorldPosition(v3)
@@ -807,6 +809,8 @@ $normalColor: #1e606d;
     flex-direction: column;
     text-align: center;
     font-size: 14px;
+    background-color: #000;
+    color: #eee;
     ::v-deep .ivu-progress-bg {
       background-color: #20cabf;
     }
@@ -837,14 +841,6 @@ $normalColor: #1e606d;
     padding: 2px 5px;
     font-size: 14px;
     margin-bottom: 2px;
-  }
-  .back {
-    position: absolute;
-    bottom: 190px;
-    right: 50%;
-    z-index: 2019;
-    transform: translateX(50%);
-    display: flex;
   }
 }
 .header,
@@ -995,6 +991,14 @@ $normalColor: #1e606d;
     }
   }
 }
+.back {
+    position: absolute;
+    top: 30px;
+    left: 20px;
+    z-index: 99;
+    transform: translateX(50%);
+    display: flex;
+}
 </style>
 
 <style lang="scss">
@@ -1138,14 +1142,14 @@ $activeColor: #ffcd10;
         align-items: center;
         justify-content: space-between;
       }
-      .title {
+      .point-note-title {
         width: 190px;
         font-family: 'zuiguan';
         font-size: 14px;
         line-height: 22px;
         color: $activeColor;
       }
-      .detail {
+      .point-note-detail {
         width: 190px;
         font-size: 12px;
         color: $activeColor;

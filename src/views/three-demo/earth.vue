@@ -310,7 +310,7 @@ export default {
     //卫星轨迹
     createMoon() {
       const curve = new THREE.EllipseCurve(0, 0, 50, 50, 0, 2*Math.PI)
-      const points = curve.getPoints(1000)
+      const points = curve.getPoints(2000)
       const geometry = new THREE.BufferGeometry().setFromPoints(points)
       const index = []
       for(let i = 0; i < points.length; i++) {
@@ -771,13 +771,12 @@ export default {
     right: 50%;
     z-index: 2019;
     transform: translateX(50%);
-    display: flex;
   }
 } 
 .header, .left, .right, .footer {
   position: absolute;
   z-index: 100;
-  background-color: rgba(5, 88, 241, 0.5);
+  background-color: rgba(35, 95, 109, 0.1);
 }
 .header {
   left: 0;
